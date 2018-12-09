@@ -4,17 +4,40 @@ from OpenGL.GLU import *
 import numpy as np
 import time, datetime
 
-# obsługa myszki
-myszkax = 400;
-myszkay = 300;
+color = np.array([
+        [1.0, 0.0, 0.0],
+        [0.0, 1.0, 0.0],
+        [0.0, 0.0, 1.0],
+        [1.0, 1.0, 0.0],
+    ])
 
-def myszka(x, y):
-    global myszkax, myszkay;
-    myszkax = x;
-    myszkay = y
-    glutPostRedisplay(); # zaznacz, że okno wymaga przerysowania
+st = True
+ct = False
+old_st = 0
+t_size = [1, 1, 1]
+k_size = [1, 1, 1]
 
-def Figure3D(n, cmode, v, s, c):
+def keyboard(key, x, y):
+    global color, k_size, t_size
+    global st, ct
+    ch = key.decode("utf-8")
+
+    if ch == chr(27):
+        print("elÓWA")
+        sys.exit()
+    if ch == 'c':
+        color = np.random.rand(4,3)
+    if ch == 's':
+        st = not st
+    if ch == 't':
+        ct = not ct
+    if ch == 'z':
+        k_size = np.random.rand(3)*3
+    if ch == 'x':
+        t_size = np.random.rand(3)*3
+
+def Figure3D(n, cmode, v, s, c, scale):
+    v *= scale
     glBegin(GL_TRIANGLES)
     for i in range(n):      # tworzymy n ścian trójkątnych
         if(cmode):                    # tryb koloru
@@ -29,50 +52,61 @@ def Figure3D(n, cmode, v, s, c):
 
     glEnd()
 
-def Cube():
-    vertices = (
-        (1, -1, -1),
-        (1, 1, -1),
-        (-1, 1, -1),
-        (-1, -1, -1),
-        (1, -1, 1),
-        (1, 1, 1),
-        (-1, -1, 1),
-        (-1, 1, 1)
+def Polygon(L, n):
+    for j in range(n):
+        x = np.sin(j / n * 2 * np.pi)*L
+        y = np.cos(j / n * 2 * np.pi)*L
+        glVertex3f(x, y, 0.0);
+
+def Cube(scale):
+    vertices = np.array([
+        [0.5, -0.5, -0.5],
+        [0.5, 0.5, -0.5],
+        [-0.5, 0.5, -0.5],
+        [-0.5, -0.5, -0.5],
+        [0.5, -0.5, 0.5],
+        [0.5, 0.5, 0.5],
+        [-0.5, -0.5, 0.5],
+        [-0.5, 0.5, 0.5]]
     )
-    edges = (
-        (0, 1),
-        (0, 3),
-        (0, 4),
-        (2, 1),
-        (2, 3),
-        (2, 7),
-        (6, 3),
-        (6, 4),
-        (6, 7),
-        (5, 1),
-        (5, 4),
-        (5, 7)
+    edges = np.array([
+        [0, 1],
+        [0, 3],
+        [0, 4],
+        [2, 1],
+        [2, 3],
+        [2, 7],
+        [6, 3],
+        [6, 4],
+        [6, 7],
+        [5, 1],
+        [5, 4],
+        [5, 7]]
     )
+    vertices *= scale
     glBegin(GL_LINES)
     for edge in edges:
         for vertex in edge:
             glVertex3fv(vertices[vertex])
     glEnd()
 
+
 def rysuj():
-    t = datetime.datetime.now()
-    t = t.microsecond/10000 * 3.6 #zmieniaj tylko zera
+    global old_st
+    if st:
+        t = datetime.datetime.now()
+        t = t.microsecond / 10000 * 3.6  # zmieniaj tylko zera
+        old_st = t
+    else:
+        t = old_st
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); # czyszczenie sceny
     glLoadIdentity(); # resetowanie widoku
 
     glTranslatef(0.0, -2.0, -12.0) # przesunięcie widoku
-    glRotatef(-400 + myszkax, 0.0, 1.0, 0.0); # obrót
-    glRotatef(-300 + myszkay, 0.0, 1.0, 0.0); # obrót
     glRotatef(t, 0.0, 1.0, 0.0);  # obrót
 
-    #Cube()
+    Cube(k_size)
 
     v = np.array([              #wierzchołki
         [0.5, -0.5, 0.5],
@@ -86,16 +120,10 @@ def rysuj():
         [3, 0, 2],
         [0, 3, 1],
     ])
-    c = np.array([
-        [1.0, 0.0, 0.0],
-        [0.0, 1.0, 0.0],
-        [0.0, 0.0, 1.0],
-        [1.0, 1.0, 0.0],
-    ])
 
-    glTranslatef(0, 0, -1)
+    glTranslatef(2, 0, -1)
     for i in range(2):
-        Figure3D(4,i,v,s,c)
+        Figure3D(4,i,v,s,color, t_size)
         glTranslatef(2, 0, 0)
 
 
@@ -112,7 +140,7 @@ def program02():
 
     glutDisplayFunc(rysuj);
     glutIdleFunc(rysuj);
-    glutMotionFunc(myszka);
+    glutKeyboardFunc(keyboard)
 
     glClearColor(0.0, 0.0, 0.0, 0.0);
     glClearDepth(1.0);
