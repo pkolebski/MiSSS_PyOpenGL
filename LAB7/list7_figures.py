@@ -26,7 +26,7 @@ def rysuj():
     glTranslatef(-4.0, -2.0, -12.0) # przesunięcie widoku
     glRotatef(-400 + myszkax, 0.0, 1.0, 0.0); # obrót
     glRotatef(-300 + myszkay, 0.0, 1.0, 0.0); # obrót
-    glRotatef(t, 0.0, 1.0, 0.0);  # obrót
+    # glRotatef(t, 0.0, 1.0, 0.0);  # obrót
 
     glBegin(GL_POLYGON)  # rysowanie trójkąta
     for i in range(6):

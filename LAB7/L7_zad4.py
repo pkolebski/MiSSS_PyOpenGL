@@ -4,26 +4,26 @@ from OpenGL.GLUT import *
 from PIL import Image
 import numpy as np
 
-bound = 1;
+bound = 1
 
 # zmień teksturę
 def keypress(key, x, y):
-    global bound;
-    bound = 1 - bound;
-    glBindTexture(GL_TEXTURE_2D, bound);
+    global bound
+    bound = 1 - bound
+    glBindTexture(GL_TEXTURE_2D, bound)
 
 def create_triangles(p,a, b, c):
-    glTexCoord2f(0.5, 0.0);
+    glTexCoord2f(0.5, 0.0)
     glVertex3fv(p[a])
-    glTexCoord2f(0.0, 1.0);
+    glTexCoord2f(0.0, 1.0)
     glVertex3fv(p[b])
-    glTexCoord2f(1.0, 1.0);
+    glTexCoord2f(1.0, 1.0)
     glVertex3fv(p[c])
 
 
 def Polygon():
 
-    t = (1.0 + np.sqrt(5.0)) / 2.0;
+    t = (1.0 + np.sqrt(5.0)) / 2.0
 
     punkts = [
      [-1, t, 0],
@@ -67,58 +67,48 @@ def Polygon():
 
 # pętla wyświetlająca
 def display():
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glLoadIdentity();
-
-    # glTexCoord2f(0.0, 0.0);
-    # glVertex3f(-1.0, -1.0, 0.0);
-    # glTexCoord2f(1.0, 0.0);
-    #
-    # glVertex3f(1.0, -1.0, 0.0);
-    # glTexCoord2f(1.0, 1.0);
-    # glVertex3f(1.0, 1.0, 0.0);
-    # glTexCoord2f(0.0, 1.0);
-    # glVertex3f(-1.0, 1.0, 0.0);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+    glLoadIdentity()
     Polygon()
 
-    glutSwapBuffers();
+    glutSwapBuffers()
 
-glutInit(sys.argv);
-glutInitWindowSize(600, 600);
-glutInitWindowPosition(0, 0);
-glutCreateWindow(b"Tekstury");
-glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH);
-glutDisplayFunc(display);
-glutIdleFunc(display);
-glutKeyboardFunc(keypress);
-glClearColor(1.0, 1.0, 1.0, 1.0);
-glClearDepth(1.0);
-glDepthFunc(GL_LESS);
-glEnable(GL_DEPTH_TEST);
+glutInit(sys.argv)
+glutInitWindowSize(600, 600)
+glutInitWindowPosition(0, 0)
+glutCreateWindow(b"Tekstury")
+glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH)
+glutDisplayFunc(display)
+glutIdleFunc(display)
+glutKeyboardFunc(keypress)
+glClearColor(1.0, 1.0, 1.0, 1.0)
+glClearDepth(1.0)
+glDepthFunc(GL_LESS)
+glEnable(GL_DEPTH_TEST)
 glEnable(GL_TEXTURE_2D)
 
 # przygotuj tekstury
-glBindTexture(GL_TEXTURE_2D, 0);
-image = Image.open("tekstura1.bmp");
-width = image.size[0];
-height = image.size[1];
-image = image.tobytes("raw", "RGBX", 0, -1);
-glTexImage2D(GL_TEXTURE_2D, 0, 3, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
-glTexParameter(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+glBindTexture(GL_TEXTURE_2D, 0)
+image = Image.open("tekstura1.bmp")
+width = image.size[0]
+height = image.size[1]
+image = image.tobytes("raw", "RGBX", 0, -1)
+glTexImage2D(GL_TEXTURE_2D, 0, 3, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image)
+glTexParameter(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
 
-glBindTexture(GL_TEXTURE_2D, 1);
-image = Image.open("tekstura2.bmp");
-width = image.size[0];
-height = image.size[1];
-image = image.tobytes("raw", "RGBX", 0, -1);
-glTexImage2D(GL_TEXTURE_2D, 0, 3, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
-glTexParameter(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+glBindTexture(GL_TEXTURE_2D, 1)
+image = Image.open("tekstura2.bmp")
+width = image.size[0]
+height = image.size[1]
+image = image.tobytes("raw", "RGBX", 0, -1)
+glTexImage2D(GL_TEXTURE_2D, 0, 3, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image)
+glTexParameter(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
 
 # ustaw projekcję ortograficzną
-glMatrixMode(GL_PROJECTION);
-glLoadIdentity();
-glOrtho(-10, 10, -10, 10, 15, 20);
-gluLookAt(0.0, 0.0, 15.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
-glMatrixMode(GL_MODELVIEW);
+glMatrixMode(GL_PROJECTION)
+glLoadIdentity()
+glOrtho(-10, 10, -10, 10, 15, 20)
+gluLookAt(0.0, 0.0, 15.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0)
+glMatrixMode(GL_MODELVIEW)
 
-glutMainLoop();
+glutMainLoop()
