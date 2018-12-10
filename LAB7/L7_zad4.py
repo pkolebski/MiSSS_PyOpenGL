@@ -7,6 +7,17 @@ import numpy as np
 bound = 1
 
 # zmień teksturę
+myszkax = 0
+myszkay = 0
+
+def myszka(x, y):
+    global myszkax, myszkay
+    myszkax = x
+    myszkay = y
+    glutPostRedisplay() # zaznacz, że okno wymaga przerysowania
+
+
+# zmień teksturę
 def keypress(key, x, y):
     global bound
     bound = 1 - bound
@@ -69,17 +80,31 @@ def Polygon():
 def display():
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     glLoadIdentity()
+    glTranslatef(0.0, 0.0, -2.0)
+
+    distance = 4
+
+    eyeX = distance * np.cos(myszkay / 100) * np.sin(myszkax / 100)
+    eyeY = distance * np.sin(myszkay / 100) * np.sin(myszkax / 100)
+    eyeZ = distance * np.cos(myszkax / 100)
+    objX = 0
+    objY = 0
+    objZ = 0
+    gluLookAt(eyeX, eyeY, eyeZ, objX, objY, objZ, 0, 1, 0)
+
     Polygon()
+    glTranslatef(0.0, 0.0, 2.0)
 
     glutSwapBuffers()
 
 glutInit(sys.argv)
-glutInitWindowSize(600, 600)
-glutInitWindowPosition(0, 0)
+glutInitWindowSize(800, 600)
+glutInitWindowPosition(300, 100)
 glutCreateWindow(b"Tekstury")
 glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH)
 glutDisplayFunc(display)
 glutIdleFunc(display)
+glutMotionFunc(myszka)
 glutKeyboardFunc(keypress)
 glClearColor(1.0, 1.0, 1.0, 1.0)
 glClearDepth(1.0)
@@ -105,10 +130,9 @@ glTexImage2D(GL_TEXTURE_2D, 0, 3, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, i
 glTexParameter(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
 
 # ustaw projekcję ortograficzną
-glMatrixMode(GL_PROJECTION)
-glLoadIdentity()
-glOrtho(-10, 10, -10, 10, 15, 20)
-gluLookAt(0.0, 0.0, 15.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0)
+glMatrixMode(GL_PROJECTION) # tryb projekcji
+glLoadIdentity() # resetuj projekcję
+gluPerspective(50.0, float(800) / float(600), 0.1, 100)
 glMatrixMode(GL_MODELVIEW)
 
 glutMainLoop()
