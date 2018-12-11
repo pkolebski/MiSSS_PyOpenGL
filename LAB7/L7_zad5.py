@@ -15,11 +15,10 @@ def keyboard(key, x, y):
     ch = key.decode("utf-8")
     if ch == 'a':
         line_size *= 2
-        return
     elif ch == 's':
         line_size *= 0.5
-        return
-    line_size = int(ch)
+    elif ch in [str(x)  for x in range(10)]:
+        line_size = int(ch)
 
 
 def paint():
