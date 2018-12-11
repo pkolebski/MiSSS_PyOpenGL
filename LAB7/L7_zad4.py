@@ -6,7 +6,6 @@ import numpy as np
 
 bound = 1
 
-# zmień teksturę
 myszkax = 0
 myszkay = 0
 
@@ -14,10 +13,8 @@ def myszka(x, y):
     global myszkax, myszkay
     myszkax = x
     myszkay = y
-    glutPostRedisplay() # zaznacz, że okno wymaga przerysowania
+    glutPostRedisplay()
 
-
-# zmień teksturę
 def keypress(key, x, y):
     global bound
     bound = 1 - bound
@@ -30,7 +27,6 @@ def create_triangles(p,a, b, c):
     glVertex3fv(p[b])
     glTexCoord2f(1.0, 1.0)
     glVertex3fv(p[c])
-
 
 def Polygon():
 
@@ -76,25 +72,39 @@ def Polygon():
     create_triangles(punkts,9, 8, 1)
     glEnd()
 
-# pętla wyświetlająca
+def normalize(v):
+    return v / np.sqrt((np.sum(v ** 2)))
+
 def display():
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     glLoadIdentity()
-    glTranslatef(0.0, 0.0, -2.0)
 
-    distance = 4
+    m = np.eye(4)
+    distance = 7
 
-    eyeX = distance * np.cos(myszkay / 100) * np.sin(myszkax / 100)
-    eyeY = distance * np.sin(myszkay / 100) * np.sin(myszkax / 100)
-    eyeZ = distance * np.cos(myszkax / 100)
-    objX = 0
-    objY = 0
-    objZ = 0
-    gluLookAt(eyeX, eyeY, eyeZ, objX, objY, objZ, 0, 1, 0)
+    eyeX = distance * np.cos(myszkay/100) * np.sin(myszkax/100)
+    eyeY = distance * np.sin(myszkay/100) * np.sin(myszkax/100)
+    eyeZ = distance * np.cos(myszkax/100)
+
+    center = np.array([0, 0, 0])
+    upvector3D = np.array([0 , 1, 0])
+    eyePosition = np.array([eyeX, eyeY, eyeZ])
+
+    forward = center - eyePosition
+    z = normalize(forward)
+    side = np.cross(forward, upvector3D)
+    x = normalize(side)
+    up = np.cross(side, forward)
+    y = normalize(up)
+
+    m[0:3, 0] = x
+    m[0:3, 1] = y
+    m[0:3, 2] = -z
+
+    glMultMatrixd(m)
+    glTranslatef(-eyeX, -eyeY, -eyeZ)
 
     Polygon()
-    glTranslatef(0.0, 0.0, 2.0)
-
     glutSwapBuffers()
 
 glutInit(sys.argv)
@@ -102,11 +112,13 @@ glutInitWindowSize(800, 600)
 glutInitWindowPosition(300, 100)
 glutCreateWindow(b"Tekstury")
 glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH)
+
 glutDisplayFunc(display)
 glutIdleFunc(display)
 glutMotionFunc(myszka)
 glutKeyboardFunc(keypress)
-glClearColor(1.0, 1.0, 1.0, 1.0)
+
+glClearColor(0.0, 0.0, 0.0, 1.0)
 glClearDepth(1.0)
 glDepthFunc(GL_LESS)
 glEnable(GL_DEPTH_TEST)
@@ -129,7 +141,6 @@ image = image.tobytes("raw", "RGBX", 0, -1)
 glTexImage2D(GL_TEXTURE_2D, 0, 3, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image)
 glTexParameter(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
 
-# ustaw projekcję ortograficzną
 glMatrixMode(GL_PROJECTION) # tryb projekcji
 glLoadIdentity() # resetuj projekcję
 gluPerspective(50.0, float(800) / float(600), 0.1, 100)
