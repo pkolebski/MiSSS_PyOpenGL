@@ -10,6 +10,8 @@ color = np.array([
         [0.0, 1.0, 0.0],
         [0.0, 0.0, 1.0],
         [1.0, 1.0, 0.0],
+        [1.0, 1.0, 0.0],
+        [1.0, 1.0, 0.0],
     ])
 
 st = True
@@ -24,10 +26,9 @@ def keyboard(key, x, y):
     ch = key.decode("utf-8")
 
     if ch == chr(27):
-        print("elÓWA")
         sys.exit()
     if ch == 'c':
-        color = np.random.rand(4, 3)
+        color = np.random.rand(6, 3)
         print(color)
     if ch == 's':
         st = not st
@@ -54,7 +55,7 @@ def rysuj():
 
     glRotatef(t % 360, 0.0, 1.0, 0.0)  # obrót
     glTranslatef(-2, 0, 1)
-    Cube(k_size)
+    Cube(k_size, color)
     reset_view()
     glRotatef(t2 % 360, 0.0, 1.0, 0.0)  # obrót
     glTranslatef(4, 0, -2)

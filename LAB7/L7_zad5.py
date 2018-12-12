@@ -13,6 +13,7 @@ line_size_location = None
 def keyboard(key, x, y):
     global line_size
     ch = key.decode("utf-8")
+
     if ch == 'a':
         line_size *= 2
     elif ch == 's':
@@ -61,10 +62,14 @@ def main():
     uniform float line_size;
     
     float getf(vec2 st) {
-    float x = st.x * 20 - 10;
-    float y = st.y * 20 - 10;
+    //float x = st.x * 20 - 10;
+    //float y = st.y * 20 - 10;
     float a = 2;
-        if (abs(pow((pow(x, 2.) + pow(y, 2.)), 2.) + 4. * a * x * (pow(x, 2.) + pow(y, 2.)) - 4. * pow(a, 2.) * pow(y, 2.)) < line_size) {
+        //if (abs(pow((pow(x, 2.) + pow(y, 2.)), 2.) + 4. * a * x * (pow(x, 2.) + pow(y, 2.)) - 4. * pow(a, 2.) * pow(y, 2.)) < line_size) {
+    float r = sqrt(pow(st.x, 2.) + pow(st.y, 2.));
+    float cos_phi = st.x / r;
+    float theta = 2.*arctan(st.y / (st.x + r));
+    if (abs(2. * a * (1. - cos(theta))) < line_size)  {
             return 1.0;
         }
         return 0.0;

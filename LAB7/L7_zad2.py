@@ -8,20 +8,28 @@ import time
 myszkax = 400;
 myszkay = 300;
 
+t = -np.pi/2
+
 def myszka(x, y):
     global myszkax, myszkay;
     myszkax = x;
     myszkay = y
     glutPostRedisplay(); # zaznacz, że okno wymaga przerysowania
+theta = 2 * np.pi / 6
+r2 = 1
+vertexes = [((np.cos(theta * i) * r2) + 4, (np.sin(theta * i) * r2), 0) for i in range(6)]
 
 def rysuj():
-    t = time.time()
+    global t
+
+    # if np.sin(t) > 0.9: t = -np.pi/2
+    # t = time.time()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); # czyszczenie sceny
     glLoadIdentity(); # resetowanie widoku
 
-    glTranslatef(0, 0, np.sin(t))
+    # glTranslatef(0, 0, np.sin(t))
 
-    glTranslatef(-4.0, -2.0, -12.0) # przesunięcie widoku
+    glTranslatef(-4.0 + np.sin(t), -2.0 + np.cos(t), -12.0) # przesunięcie widoku
     glRotatef(-400 + myszkax, 0.0, 1.0, 0.0); # obrót
     glRotatef(-300 + myszkay, 0.0, 1.0, 0.0); # obrót
 
@@ -64,6 +72,8 @@ def rysuj():
     glEnd() # koniec rysowania prostokąta
 
     glutSwapBuffers(); # zamiana buforów - wyświetlenie trójkątów i prostokąta
+
+    t = t + 0.005
 
 def program02():
     glutInit(sys.argv); # przekazanie argumentów z wiersza poleceń do GLUT
