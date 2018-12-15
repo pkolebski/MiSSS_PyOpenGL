@@ -2,22 +2,24 @@ from OpenGL.GL import *
 from OpenGL.GLU import *
 from OpenGL.GLUT import *
 import time
+
 # licznik czasu - do wymuszenia częstotliwości odświeżania
 tick = 0
-speed = 0.1
 
-class AABB(object):
-    def __init__(self, p1, p2):
-        self.p1 = p1
-        self.p3 = p2
-
+# klasa pomocnicza, pozwalająca na odwoływanie się do słowników przez notację kropkową
+class dd(dict):
+    __getattr__ = dict.get
+    __setattr__ = dict.__setitem__
+    __delattr__ = dict.__delitem__
+    
 # dwa obszary ograniczające o punktach skrajnych p1 i p3
-aabb1 = AABB([-2.0, -4.0], [2.0, 4.0])
-
-aabb2 = AABB([-6.0, -1.0], [-4.0, 1.0])
-
-aabb3 = AABB([-6.0, 6.0], [-3.0, 3.0])
-
+aabb1 = {"p1":[-2.0, -4.0], "p3":[2.0, 4.0]}
+aabb1 = dd(aabb1)
+aabb2 = {"p1":[-6.0, -1.0], "p3":[-4.0, 1.0]}
+aabb2 = dd(aabb2)
+aabb3 = {"p1":[-6.0, -1.0], "p3":[-4.0, 1.0]}
+aabb3 = dd(aabb3)
+speed = 0.1
 
 def keyboard(key, x, y):
     global aabb3, speed
@@ -50,15 +52,11 @@ def dAABB2f(p1, p3, col):
     glEnd()
     pass
 
-
 # funkcja sprawdzająca warunki zachodzenia na siebie dwóch AABB
-def ccAABBtoAABB(box1, box2):
-    if box1.p3[0] < box2.p1[0] or box1.p1[0] > box2.p3[0]:
-        return 0
-    if box1.p3[1] < box2.p1[1] or box1.p1[1] > box2.p3[1]:
-        return 0
+def ccAABBtoAABB(p1, p3, q1, q3):
+    if (p3[0] < q1[0] or p1[0] > q3[0]): return 0
+    if (p3[1] < q1[1] or p1[1] > q3[1]): return 0
     return 1
-
 
 # wymuszenie częstotliwości odświeżania
 def cupdate():
@@ -69,35 +67,35 @@ def cupdate():
     tick = ltime
     return True
 
-
 # pętla wyświetlająca
 def display():
     if not cupdate():
         return
-
-    global aabb1, aabb2, aabb3
+    
+    global aabb1, aabb2
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     glLoadIdentity()
-    aabb2.p1[0] += 0.1; aabb2.p3[0] += 0.1
-    if aabb2.p1[0] > 4.0:
+    aabb2.p1[0] += 0.1
+    aabb2.p3[0] += 0.1
+    if (aabb2.p1[0] > 4.0):
         aabb2.p1[0] = -6.0
         aabb2.p3[0] = -4.0
-    dAABB2f(aabb3.p1, aabb3.p3, [0.5, 0.1, 0.5])
+    dAABB2f(aabb3.p1, aabb3.p3, [0.5, 0.2, 0.3])
     dAABB2f(aabb2.p1, aabb2.p3, [0, 0.8, 0])
-    dAABB2f(aabb1.p1, aabb1.p3, [0.5, 0.5, 0.5])
-    txt = ''
-    if ccAABBtoAABB(aabb1, aabb2):
-        txt += "1x2, "
-    if ccAABBtoAABB(aabb2, aabb3):
-        txt += "2x3, "
-    if ccAABBtoAABB(aabb1, aabb3):
-        txt += "1x3, "
-
-    sys.stdout.write(txt + '\n')
-
+    dAABB2f(aabb1.p1, aabb1.p3, [0, 0.5, 0.5])
+    
+    txt = "-"
+    if ccAABBtoAABB(aabb1.p1, aabb1.p3, aabb2.p1, aabb2.p3):
+        txt += "aabb1 x aabb2, "
+    if ccAABBtoAABB(aabb3.p1, aabb3.p3, aabb2.p1, aabb2.p3):
+        txt += "aabb3 x aabb2, "
+    if ccAABBtoAABB(aabb1.p1, aabb1.p3, aabb3.p1, aabb3.p3):
+        txt += "aabb1 x aabb3, "
+    txt += "\n"
+    sys.stdout.write(txt)
+    
     glFlush()
-
-
+    
 glutInit()
 glutInitWindowSize(600, 600)
 glutInitWindowPosition(0, 0)
@@ -118,4 +116,5 @@ glLoadIdentity()
 glOrtho(-10, 10, -10, 10, 15, 20)
 gluLookAt(0.0, 0.0, 15.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0)
 glMatrixMode(GL_MODELVIEW)
+
 glutMainLoop()
