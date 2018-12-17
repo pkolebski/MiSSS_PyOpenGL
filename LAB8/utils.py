@@ -78,7 +78,7 @@ class Polygon(Figure):
 
 
 class Cube(Figure):
-    def __init__(self, pos):
+    def __init__(self, pos, scale=1):
         self.draw_AABB = False
         self.draw_fill = True
         self.vertices = np.array([
@@ -89,7 +89,7 @@ class Cube(Figure):
             [-0.5, -0.5, 0.5],
             [0.5, -0.5, 0.5],
             [0.5, 0.5, 0.5],
-            [-0.5, 0.5, 0.5]], dtype=np.float32) + pos
+            [-0.5, 0.5, 0.5]], dtype=np.float32) * scale + pos
 
         self.color = np.array([0.5, 0.6, 0.2])
         self.triangles = np.array([[0, 1, 2],
@@ -156,3 +156,7 @@ class AABB:
             glVertex3fv(self.vertices[link[3]])
             glEnd()
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
+
+
+def normalize(vec):
+    return vec / np.linalg.norm(vec)

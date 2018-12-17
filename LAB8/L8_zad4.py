@@ -4,7 +4,7 @@ from OpenGL.GLUT import *
 from math import *
 import time
 import numpy as np
-from utils import Polygon, Cube, Tetrahedron
+from utils import Polygon, Cube, Tetrahedron, normalize
 
 
 # licznik czasu - do wymuszenia częstotliwości odświeżania
@@ -17,10 +17,11 @@ orient = np.array([0., 0., -1.])  # kierunek
 up = np.array([0., 1., 0.])  # góra
 
 
-figures = [#Cube([2, 6, 5]),
+figures = [Cube([2, 6, 0], 2),
+           Cube([2, 6, 0])]
            #Polygon([-2, -4, 2]),
-           Tetrahedron([0, 0, 0], [2, 0, 0], [0, 2, 0], [1, 1, 2]),
-           Tetrahedron([3, 0, 0], [5, 0, 0], [3, 2, 0], [4, 1, 2])]
+           # Tetrahedron([0, 0, 0], [2, 0, 0], [0, 2, 0], [1, 1, 2]),
+           # Tetrahedron([3, 0, 0], [5, 0, 0], [3, 2, 0], [4, 1, 2])]
 
 
 # ruch kamery
@@ -112,12 +113,86 @@ def triangle_collision(triangle1, triangle2):
     sides = [triangle_side(*triangle1, p) for p in triangle2]
 
     if all([s == 0 for s in sides]):
-        if check_crossing_triangles2D(triangle1, triangle2):
-            print("kolizja")
+        x = [1 if all(triangle1[:, i] == triangle2[:, i]) else 0 for i in range(3)]
+        if np.sum(x) > 0:
+            arg = np.argsort(x)
+            if check_crossing_triangles2D(triangle1[:, arg[:2]], triangle2[:, arg[:2]]) or \
+                    check_point_in_triangle2D(triangle1[:, arg[:2]], triangle2[:, arg[:2]]) or \
+                    check_point_in_triangle2D(triangle2[:, arg[:2]], triangle1[:, arg[:2]]):
+                # print("kolizja punkt w środku")
+                    pass
+            return True
 
     if all([s > 0 for s in sides]) or all([s < 0 for s in sides]):
+        print('zjebalo sie')
         return False
-    return True
+    print('nie zjebalo sie')
+
+    intersection_points = []
+    if triangle_plane_colliding_with_line(triangle1, triangle2[0], triangle2[1]):
+        intersection_points.append(find_intersection_point(triangle1, triangle2[0], triangle2[1]))
+    if triangle_plane_colliding_with_line(triangle1, triangle2[1], triangle2[2]):
+        intersection_points.append(find_intersection_point(triangle1, triangle2[1], triangle2[2]))
+    if triangle_plane_colliding_with_line(triangle1, triangle2[0], triangle2[2]):
+        intersection_points.append(find_intersection_point(triangle1, triangle2[0], triangle2[2]))
+    for point in intersection_points:
+        print('create cube')
+        cube = Cube(point, 0.1)
+        cube.draw()
+    return False
+
+def find_intersection_point(triangle, p0, p1):
+    a, b, c = triangle
+
+    n = np.cross(b-a, c-a)
+    n = n/np.linalg.norm(n)
+    I = np.array([0, 0, 0])
+    u = p1-p0
+    w = p0 - a
+
+    D = n @ u
+    N = - n@w
+    check = 0
+    if abs(D) < 10e-7:
+        if N == 0:
+            check = 2
+        else:
+            check = 0
+
+    sI = N/D
+    I = p0 + np.array(sI) * np.array(u)
+
+    if sI < 0 or sI > 1:
+        check = 3
+    else:
+        check = 1
+    return I
+
+def triangle_plane_colliding_with_line(triangle, p1, p2):
+    a, b, c = triangle
+
+    v = np.cross(b - a, c - a)
+    v = normalize(v)
+
+    u = v @ a
+
+    try:
+        t = (u - v @ a) / v @ (p2 - p1)
+    except ZeroDivisionError:
+        print('XD')
+        return False
+
+    return 0 <= t <= 1
+
+
+def check_point_in_triangle2D(tri1, tri2):
+    x = [tri1[0], tri1[1], tri1[2]]
+    for p in x:
+        alpha = ((p[0] - tri2[0][0]) * (tri2[2][1] - tri2[0][1]) - (tri2[2][0] - tri2[0][0]) * (p[1] - tri2[0][1])) / ((tri2[1][0] - tri2[0][0]) * (tri2[2][1] - tri2[0][1]) - (tri2[2][0] - tri2[0][0]) * (tri2[1][1] - tri2[0][1]))
+        beta = ((tri2[1][0] - tri2[0][0]) * (p[1] - tri2[0][1]) - (p[0] - tri2[0][0]) * tri2[1][1] - tri2[0][1]) / ((tri2[1][0] - tri2[0][0]) * (tri2[2][1] - tri2[0][1]) - (tri2[2][0] - tri2[0][0]) * (tri2[1][1] - tri2[0][1]))
+        if alpha > 0 and beta > 0 and alpha + beta <= 1:
+            return 1
+    return 0
 
 def check_crossing_triangles2D(triangle, other_triangle):
 
@@ -156,7 +231,8 @@ def figure_collision(figure1, figure2):
     for triangle1 in figure1.triangles:
         for triangle2 in figure2.triangles:
             if triangle_collision(figure1.vertices[triangle1], figure2.vertices[triangle2]):
-                print('Kolizja')
+                # print('Kolizja')
+                pass
 
 
 def check_collisions(figures):
