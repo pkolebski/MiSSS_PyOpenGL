@@ -121,17 +121,17 @@ def triangle_collision(triangle1, triangle2):
 
 def check_crossing_triangles2D(triangle, other_triangle):
 
-    if (check_crossing_lines2D([triangle.a, triangle.b], [other_triangle.a, other_triangle.b]) or
-        check_crossing_lines2D([triangle.a, triangle.b], [other_triangle.b, other_triangle.c]) or
-        check_crossing_lines2D([triangle.a, triangle.b], [other_triangle.c, other_triangle.a]) or
+    if (check_crossing_lines2D([triangle[0], triangle[1]], [other_triangle[0], other_triangle[1]]) or
+        check_crossing_lines2D([triangle[0], triangle[1]], [other_triangle[1], other_triangle[2]]) or
+        check_crossing_lines2D([triangle[0], triangle[1]], [other_triangle[2], other_triangle[0]]) or
 
-        check_crossing_lines2D([triangle.b, triangle.c], [other_triangle.a, other_triangle.b]) or
-        check_crossing_lines2D([triangle.b, triangle.c], [other_triangle.b, other_triangle.c]) or
-        check_crossing_lines2D([triangle.b, triangle.c], [other_triangle.c, other_triangle.a]) or
+        check_crossing_lines2D([triangle[1], triangle[2]], [other_triangle[0], other_triangle[1]]) or
+        check_crossing_lines2D([triangle[1], triangle[2]], [other_triangle[1], other_triangle[2]]) or
+        check_crossing_lines2D([triangle[1], triangle[2]], [other_triangle[2], other_triangle[0]]) or
 
-        check_crossing_lines2D([triangle.c, triangle.a], [other_triangle.a, other_triangle.b]) or
-        check_crossing_lines2D([triangle.c, triangle.a], [other_triangle.b, other_triangle.c]) or
-        check_crossing_lines2D([triangle.c, triangle.a], [other_triangle.c, other_triangle.a])):
+        check_crossing_lines2D([triangle[2], triangle[0]], [other_triangle[0], other_triangle[1]]) or
+        check_crossing_lines2D([triangle[2], triangle[0]], [other_triangle[1], other_triangle[2]]) or
+        check_crossing_lines2D([triangle[2], triangle[0]], [other_triangle[2], other_triangle[0]])):
             return True
     return False
 
