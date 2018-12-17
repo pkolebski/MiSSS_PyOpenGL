@@ -111,12 +111,45 @@ def triangle_side(point1, point2, point3, p):
 def triangle_collision(triangle1, triangle2):
     sides = [triangle_side(*triangle1, p) for p in triangle2]
 
-    if any([s == 0 for s in sides]):
-        return True
+    if all([s == 0 for s in sides]):
+        if check_crossing_triangles2D(triangle1, triangle2):
+            print("kolizja")
 
     if all([s > 0 for s in sides]) or all([s < 0 for s in sides]):
         return False
     return True
+
+def check_crossing_triangles2D(triangle, other_triangle):
+
+    if (check_crossing_lines2D([triangle.a, triangle.b], [other_triangle.a, other_triangle.b]) or
+        check_crossing_lines2D([triangle.a, triangle.b], [other_triangle.b, other_triangle.c]) or
+        check_crossing_lines2D([triangle.a, triangle.b], [other_triangle.c, other_triangle.a]) or
+
+        check_crossing_lines2D([triangle.b, triangle.c], [other_triangle.a, other_triangle.b]) or
+        check_crossing_lines2D([triangle.b, triangle.c], [other_triangle.b, other_triangle.c]) or
+        check_crossing_lines2D([triangle.b, triangle.c], [other_triangle.c, other_triangle.a]) or
+
+        check_crossing_lines2D([triangle.c, triangle.a], [other_triangle.a, other_triangle.b]) or
+        check_crossing_lines2D([triangle.c, triangle.a], [other_triangle.b, other_triangle.c]) or
+        check_crossing_lines2D([triangle.c, triangle.a], [other_triangle.c, other_triangle.a])):
+            return True
+    return False
+
+
+def check_crossing_lines2D(line1, line2):
+    a = line1[0]
+    b = line1[1]
+    c = line2[0]
+    d = line2[1]
+    try:
+        t = ((c[0] - a[0]) * (c[1] - d[1]) - (c[1] - a[1]) * (c[0] - d[0])) / ((b[0] - a[0]) * (c[1] - d[1]) - (b[1] - a[1]) * (c[0] - d[0]))
+        s = ((b[0] - a[0]) *(c[1] - a[1]) - (c[0] - a[0]) * (b[1] - a[1])) / ((b[0] - a[0]) * (c[1] - d[1]) - (b[1] - a[1]) * (c[0] - d[0]))
+    except ZeroDivisionError:
+        t = inf
+        s = 1
+    if 0 <= t <= 1 and 0 <= s <= 1:
+        return 1
+    return 0
 
 
 def figure_collision(figure1, figure2):
