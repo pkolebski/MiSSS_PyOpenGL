@@ -84,6 +84,10 @@ def keypress(key, x, y):
         figures[moving_figure].move([-1, 0, 0])
     if key == b'l':
         figures[moving_figure].move([1, 0, 0])
+    if key == b'm':
+        figures[moving_figure].move([0, -1, 0])
+    if key == b'n':
+        figures[moving_figure].move([0, 1, 0])
     if key == b'o':
         figures[moving_figure].rotate(np.pi/10, [0, 0, 1])
     if key == b'u':

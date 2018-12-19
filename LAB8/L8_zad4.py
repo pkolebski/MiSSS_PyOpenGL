@@ -17,8 +17,8 @@ orient = np.array([0., 0., -1.])  # kierunek
 up = np.array([0., 1., 0.])  # góra
 
 
-figures = [Cube([2, 6, 0], 2),
-           Cube([2, 6, 0])]
+figures = [Cube([1, 0, 10], 2),
+           Cube([1, 0, 10])]
            #Polygon([-2, -4, 2]),
            # Tetrahedron([0, 0, 0], [2, 0, 0], [0, 2, 0], [1, 1, 2]),
            # Tetrahedron([3, 0, 0], [5, 0, 0], [3, 2, 0], [4, 1, 2])]
@@ -124,17 +124,24 @@ def triangle_collision(triangle1, triangle2):
             return True
 
     if all([s > 0 for s in sides]) or all([s < 0 for s in sides]):
-        print('zjebalo sie')
+        # print('dziala')
         return False
-    print('nie zjebalo sie')
+    # print('nie dziala')
 
     intersection_points = []
     if triangle_plane_colliding_with_line(triangle1, triangle2[0], triangle2[1]):
-        intersection_points.append(find_intersection_point(triangle1, triangle2[0], triangle2[1]))
+        check, ip = find_intersection_point(triangle1, triangle2[0], triangle2[1])
+        if check == 1:
+            intersection_points.append(ip)
     if triangle_plane_colliding_with_line(triangle1, triangle2[1], triangle2[2]):
-        intersection_points.append(find_intersection_point(triangle1, triangle2[1], triangle2[2]))
+        check, ip = find_intersection_point(triangle1, triangle2[1], triangle2[2])
+        if check == 1:
+            intersection_points.append(ip)
     if triangle_plane_colliding_with_line(triangle1, triangle2[0], triangle2[2]):
-        intersection_points.append(find_intersection_point(triangle1, triangle2[0], triangle2[2]))
+        check, ip = find_intersection_point(triangle1, triangle2[0], triangle2[2])
+        if check == 1:
+            intersection_points.append(ip)
+    # print(intersection_points)
     for point in intersection_points:
         print('create cube')
         cube = Cube(point, 0.1)
@@ -166,7 +173,8 @@ def find_intersection_point(triangle, p0, p1):
         check = 3
     else:
         check = 1
-    return I
+
+    return check, I
 
 def triangle_plane_colliding_with_line(triangle, p1, p2):
     a, b, c = triangle
@@ -177,12 +185,13 @@ def triangle_plane_colliding_with_line(triangle, p1, p2):
     u = v @ a
 
     try:
-        t = (u - v @ a) / v @ (p2 - p1)
+        t = (u - v @ a) / (v @ (p2 - p1))
     except ZeroDivisionError:
         print('XD')
         return False
-
-    return 0 <= t <= 1
+    x = p1 + t * (p2 - p1)
+    # print(v, u, t, a, (p2-p1), (u - v @ a))
+    return 0 <= t <= 1, x
 
 
 def check_point_in_triangle2D(tri1, tri2):

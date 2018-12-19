@@ -18,10 +18,10 @@ class dd(dict):
 
 
 # trojkaty
-tri1 = {"a":[-4.0, 0.0], "b":[-2.0, 0.0], "c":[-1.0, 2.0], "col":[1, 0, 0]}; tri1 = dd(tri1)
-tri2 = {"a":[-4.0, -4.0], "b":[-2.0, -6.0], "c":[-0.0, -0.0], "col":[0, 0, 1]}; tri2 = dd(tri2)
+tri1 = {"a":[-4.0, 0.0], "b":[-2.0, 0.0], "c":[-1.0, 2.0], "col":[1, 0, 0], "defaultColor": [1, 0, 0]}; tri1 = dd(tri1)
+tri2 = {"a":[-4.0, -4.0], "b":[-2.0, -6.0], "c":[-0.0, -0.0], "col":[0, 0, 1], "defaultColor": [0, 0, 1]}; tri2 = dd(tri2)
 tri2.center = [(tri2.a[0] + tri2.b[0] + tri2.c[0]) / 3, (tri2.a[1] + tri2.b[1] + tri2.c[1]) / 3]
-tri3 = {"a":[4.0, 4.0], "b":[2.0, 6.0], "c":[1.0, 1.0], "col":[0, 1, 1]}; tri3 = dd(tri3)
+tri3 = {"a":[4.0, 4.0], "b":[2.0, 6.0], "c":[1.0, 1.0], "col":[0, 1, 1], "defaultColor": [0, 1, 1]}; tri3 = dd(tri3)
 tri3.center = [(tri3.a[0] + tri3.b[0] + tri3.c[0]) / 3, (tri3.a[1] + tri3.b[1] + tri3.c[1]) / 3]
 
 def check_point_in_triangle(tri1, tri2):
@@ -47,6 +47,8 @@ def check_triangle_in_triangle(tri1, tri2):
 
 def check_crossing_triangles(*args):
     for triangle in args:
+        triangle.col = triangle.defaultColor
+    for triangle in args:
         for other_triangle in args:
             if triangle != other_triangle:
                 if (check_crossing_lines([triangle.a, triangle.b], [other_triangle.a, other_triangle.b]) or
@@ -62,7 +64,7 @@ def check_crossing_triangles(*args):
                     check_crossing_lines([triangle.c, triangle.a], [other_triangle.b, other_triangle.c]) or
                     check_crossing_lines([triangle.c, triangle.a], [other_triangle.c, other_triangle.a])):
                         print('kolizja')
-                        triangle.col = np.random.randn(3)
+                        triangle.col = [0, 0, 0]
 
 
 def check_crossing_lines(line1, line2):
