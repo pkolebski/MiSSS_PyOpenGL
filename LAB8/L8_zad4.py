@@ -4,7 +4,7 @@ from OpenGL.GLUT import *
 from math import *
 import time
 import numpy as np
-from utils import Polygon, Cube, Tetrahedron, normalize
+from utils import Polygon, Cube, Tetrahedron, normalize, Triangle
 
 
 # licznik czasu - do wymuszenia częstotliwości odświeżania
@@ -17,11 +17,15 @@ orient = np.array([0., 0., -1.])  # kierunek
 up = np.array([0., 1., 0.])  # góra
 
 
-figures = [Cube([1, 0, 10], 2),
-           Cube([1, 0, 10])]
+# figures = [Cube([1, 0, 10], 2),
+#            Cube([1, 0, 10])]
            #Polygon([-2, -4, 2]),
            # Tetrahedron([0, 0, 0], [2, 0, 0], [0, 2, 0], [1, 1, 2]),
            # Tetrahedron([3, 0, 0], [5, 0, 0], [3, 2, 0], [4, 1, 2])]
+figures = [
+    Tetrahedron([0, 0, 0], [2, 0, 0], [0, 2, 0], [1, 1, 2]),
+    Tetrahedron([0, 0, 0], [2, 0, 0], [0, 2, 0], [1, 1, 2])
+]
 
 
 # ruch kamery
@@ -119,31 +123,26 @@ def triangle_collision(triangle1, triangle2):
             if check_crossing_triangles2D(triangle1[:, arg[:2]], triangle2[:, arg[:2]]) or \
                     check_point_in_triangle2D(triangle1[:, arg[:2]], triangle2[:, arg[:2]]) or \
                     check_point_in_triangle2D(triangle2[:, arg[:2]], triangle1[:, arg[:2]]):
-                # print("kolizja punkt w środku")
                     pass
             return True
 
     if all([s > 0 for s in sides]) or all([s < 0 for s in sides]):
-        # print('dziala')
         return False
-    # print('nie dziala')
 
     intersection_points = []
-    if triangle_plane_colliding_with_line(triangle1, triangle2[0], triangle2[1]):
-        check, ip = find_intersection_point(triangle1, triangle2[0], triangle2[1])
-        if check == 1:
-            intersection_points.append(ip)
-    if triangle_plane_colliding_with_line(triangle1, triangle2[1], triangle2[2]):
-        check, ip = find_intersection_point(triangle1, triangle2[1], triangle2[2])
-        if check == 1:
-            intersection_points.append(ip)
-    if triangle_plane_colliding_with_line(triangle1, triangle2[0], triangle2[2]):
-        check, ip = find_intersection_point(triangle1, triangle2[0], triangle2[2])
-        if check == 1:
-            intersection_points.append(ip)
-    # print(intersection_points)
+    t, x = triangle_plane_colliding_with_line(triangle1, triangle2[0], triangle2[1])
+    if 0 < t < 1:
+        intersection_points.append(x)
+
+    t, x = triangle_plane_colliding_with_line(triangle1, triangle2[1], triangle2[2])
+    if 0 < t < 1:
+        intersection_points.append(x)
+
+    t, x = triangle_plane_colliding_with_line(triangle1, triangle2[0], triangle2[2])
+    if 0 < t < 1:
+        intersection_points.append(x)
+
     for point in intersection_points:
-        print('create cube')
         cube = Cube(point, 0.1)
         cube.draw()
     return False
@@ -184,14 +183,9 @@ def triangle_plane_colliding_with_line(triangle, p1, p2):
 
     u = v @ a
 
-    try:
-        t = (u - v @ a) / (v @ (p2 - p1))
-    except ZeroDivisionError:
-        print('XD')
-        return False
+    t = (u - v @ p1) / (v @ (p2 - p1))
     x = p1 + t * (p2 - p1)
-    # print(v, u, t, a, (p2-p1), (u - v @ a))
-    return 0 <= t <= 1, x
+    return t, x
 
 
 def check_point_in_triangle2D(tri1, tri2):

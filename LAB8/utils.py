@@ -107,6 +107,20 @@ class Cube(Figure):
 
         self.AABB = AABB(self)
 
+class Triangle(Figure):
+    def __init__(self, pos, scale=1):
+        self.draw_AABB = False
+        self.draw_fill = True
+        self.vertices = np.array([
+            [-0.5, -0.5, -0.5],
+            [0.5, -0.5, -0.5],
+            [0.5, 0.5, -0.5]], dtype=np.float32) * scale + pos
+
+        self.color = np.array([0.5, 0.6, 0.2])
+        self.triangles = np.array([[0, 1, 2]], dtype=np.int)
+
+        self.AABB = AABB(self)
+
 class Tetrahedron(Figure):
     def __init__(self, *args):
         self.vertices = np.array(args, dtype=np.float32)
