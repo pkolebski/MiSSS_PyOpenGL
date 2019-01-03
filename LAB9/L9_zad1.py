@@ -8,60 +8,131 @@ import numpy as np
 # licznik czasu - do wymuszenia częstotliwości odświeżania
 tick = 0
 
+myszkax = 0
+myszkay = 0
+
+distance = 30
+
+def mouseWheel(a, b, c, d):
+    global distance
+    distance += b
+    print(a, b, c, d)
+
+def myszka(x, y):
+    global myszkax, myszkay
+    myszkax = x
+    myszkay = y
+    print(x, y)
+    glutPostRedisplay()
+
+def keypress(key, x, y):
+    global sphere
+    try:
+        sphere.s = int(key)
+    except:
+        pass
+    if key == b't':
+        sphere.v = np.random.rand(3) * 20
+
 # klasa pomocnicza, pozwalająca na odwoływanie się do słowników przez notację kropkową
 class dd(dict):
     __getattr__ = dict.get
     __setattr__ = dict.__setitem__
     __delattr__ = dict.__delitem__
 
-part1 = {}
-part1 = dd(part1)
-part1.v = [1, -1, 0]
-part1.p = [-5, 2, 3]
-part1.m = 10
-part1.r = 1
-part1.col = [0, 0.5, 0]
-part1.quad = None
+class Sphere():
+    def __init__(self, v=[1, -1, 0], p=[-5, 2, 3], col=[0, 0.5, 0], r=1, m=10, s=1, quad=None):
+        self.v = np.random.rand(3) * 5
+        self.p = p
+        self.col = col
+        self.r = r
+        self.quad = quad
+        self.m = m
+        self.s = s
 
-# rysowanie sfery
-def drawSphere(part):
-    glLoadIdentity()
-    glTranslatef(part.p[0], part.p[1], part.p[2])
-    glColor3fv(part.col)
-    gluSphere(part.quad, part.r, 16, 16)
+    def draw(self):
+        glLoadIdentity()
+        glTranslatef(self.p[0], self.p[1], self.p[2])
+        glColor3fv(self.col)
+        gluSphere(self.quad, self.r, 16, 16)
 
-# rysowanie podłogi
-def drawFloor():
-    glLoadIdentity()
-    glColor3fv([0.3, 0.3, 0.3])
-    glBegin(GL_POLYGON)
-    glVertex3fv([-10, 0, -10])
-    glVertex3fv([-10, 0, 10])
-    glVertex3fv([10, 0, 10])
-    glVertex3fv([10, 0, -10])
-    glEnd()
+    def update(self, dt):
+        self.p[0] += dt * self.v[0]
+        self.p[1] += dt * self.v[1]
+        self.p[2] += dt * self.v[2]
 
-# ruch sfery
-def updateSphere(part, dt):
-# tutaj trzeba dodać obsługę sił, w tym grawitacji
-    part.p[0] += dt * part.v[0]
-    part.p[1] += dt * part.v[1]
-    part.p[2] += dt * part.v[2]
 
-# sprawdzenie czy doszło do kolizji
-def checkSphereToFloorCollision(part):
-    if part.p[1] - part.r < 0:
-        return True
+class Cube():
+    def __init__(self, down, up, left, right, back, front):
+        self.down = down
+        self.up = up
+        self.left = left
+        self.right = right
+        self.front = front
+        self. back = back
 
-# obsługa kolizji
-def updateSphereCollision(part):
-    if not checkSphereToFloorCollision(part1):
-        return
-    else:
-        # jeśli sfera zachodzi pod podłogę, to podnieś ją
-        if part.p[1] - part.r < 0:
-            part.p[1] = part.r
-            part.v[1] = - part.v[1]
+        self.vertices = [
+            [front, down, right],
+            [back, down, right],
+            [back, up, right],
+            [front, up, right],
+            [front, down, left],
+            [back, down, left],
+            [back, up, left],
+            [front, up, left]]
+
+        self.links = [
+            [0, 1, 5, 4],
+            [3, 2, 6, 7],
+            [4, 5, 6, 7],
+            [0, 1, 2, 3],
+            [1, 2, 6, 5],
+            [0, 3, 7, 4]
+        ]
+
+    def draw(self):
+        glLoadIdentity()
+        glColor3fv([0.3, 0.3, 0.3])
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
+        for link in self.links:
+            glBegin(GL_POLYGON)
+            for i in range(4):
+                glVertex3fv(self.vertices[link[i]])
+            glEnd()
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
+
+
+sphere = Sphere()
+cube = Cube(0, 10, -10, 10, 10, -10)
+
+
+def chceckSphereToCubeCollision(sphere, cube):
+    if sphere.p[1] - sphere.r < cube.down:
+        sphere.v[1] = -sphere.v[1]
+        sphere.p[1] += cube.down - (sphere.p[1] - sphere.r)
+
+    if sphere.p[1] + sphere.r > cube.up:
+        sphere.v[1] = -sphere.v[1]
+        sphere.p[1] -= (sphere.p[1] + sphere.r) - cube.up
+
+
+    if sphere.p[0] - sphere.r < cube.front:
+        sphere.v[0] = - sphere.v[0]
+        sphere.p[0] += cube.front - (sphere.p[0] - sphere.r)
+
+    if sphere.p[0] + sphere.r > cube.back:
+        sphere.v[0] = - sphere.v[0]
+        sphere.p[0] -= (sphere.p[0] + sphere.r) - cube.back
+
+
+    if sphere.p[2] - sphere.r < cube.left:
+        sphere.v[2] = - sphere.v[2]
+        sphere.p[2] += cube.left - (sphere.p[2] - sphere.r)
+
+    if sphere.p[2] + sphere.r > cube.right:
+        sphere.v[2] = - sphere.v[2]
+        sphere.p[2] -= (sphere.p[2] + sphere.r) - cube.right
+
 
 # wymuszenie częstotliwości odświeżania
 def cupdate():
@@ -74,21 +145,33 @@ def cupdate():
 
 # pętla wyświetlająca
 def display():
+    global sphere, myszkax, myszkay, distance
     if not cupdate():
-        return;
-    glMatrixMode(GL_PROJECTION);
+        return
+    glMatrixMode(GL_PROJECTION)
     glLoadIdentity()
     glFrustum(-1, 1, -1, 1, 1, 100)
-    gluLookAt(-5, 5, 10, 0, 0, 0, 0, 1, 0)
+
+
+    eyeX = distance * np.cos(myszkay / 100) * np.sin(myszkax / 100)
+    eyeY = distance * np.sin(myszkay / 100) * np.sin(myszkax / 100)
+    eyeZ = distance * np.cos(myszkax / 100)
+
+    gluLookAt(eyeX, eyeY, eyeZ, 0, 0, 0, 0, 1, 0)
     glMatrixMode(GL_MODELVIEW)
-    global part1
+
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     glLoadIdentity()
-    drawFloor()
-    updateSphere(part1, 0.1)
-    updateSphereCollision(part1)
-    drawSphere(part1)
-    glFlush()
+    cube.draw()
+    sphere.update(0.2)
+    # updateSphereCollision(sphere)
+    chceckSphereToCubeCollision(sphere, cube)
+    sphere.draw()
+
+
+    glutSwapBuffers()
+    # glFlush()
+    print(sphere.s)
 
 glutInit()
 glutInitWindowSize(600, 600)
@@ -97,6 +180,9 @@ glutCreateWindow(b"Kolizje 05")
 glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB | GLUT_DEPTH)
 glutDisplayFunc(display)
 glutIdleFunc(display)
+glutMotionFunc(myszka)
+glutKeyboardFunc(keypress)
+glutMouseWheelFunc(mouseWheel)
 glClearColor(1.0, 1.0, 1.0, 1.0)
 glClearDepth(1.0)
 glDepthFunc(GL_LESS)
@@ -107,6 +193,6 @@ glLight(GL_LIGHT0, GL_POSITION, [0., 5., 5., 0.])
 glEnable(GL_LIGHTING)
 glEnable(GL_COLOR_MATERIAL)
 # przygotowanie sfery
-part1.quad = gluNewQuadric()
-gluQuadricNormals(part1.quad, GLU_SMOOTH)
+sphere.quad = gluNewQuadric()
+gluQuadricNormals(sphere.quad, GLU_SMOOTH)
 glutMainLoop()
