@@ -16,21 +16,19 @@ distance = 30
 def mouseWheel(a, b, c, d):
     global distance
     distance += b
-    print(a, b, c, d)
 
 def myszka(x, y):
     global myszkax, myszkay
     myszkax = x
     myszkay = y
-    print(x, y)
     glutPostRedisplay()
 
 def keypress(key, x, y):
     global sphere
-    try:
-        sphere.s = int(key)
-    except:
-        pass
+    if key == b'+':
+        sphere.s += 0.1
+    if key == b'-':
+        sphere.s -= 0.1
     if key == b't':
         sphere.v = np.random.rand(3) * 20
 
@@ -41,7 +39,7 @@ class dd(dict):
     __delattr__ = dict.__delitem__
 
 class Sphere():
-    def __init__(self, v=[1, -1, 0], p=[-5, 2, 3], col=[0, 0.5, 0], r=1, m=10, s=1, quad=None):
+    def __init__(self, v=[1, -1, 0], p=[-5, 2, 3], col=[0, 0.5, 0], r=1, m=10, s=1.0, quad=None):
         self.v = np.random.rand(3) * 5
         self.p = p
         self.col = col
@@ -108,29 +106,29 @@ cube = Cube(0, 10, -10, 10, 10, -10)
 
 def chceckSphereToCubeCollision(sphere, cube):
     if sphere.p[1] - sphere.r < cube.down:
-        sphere.v[1] = -sphere.v[1]
+        sphere.v[1] = -sphere.s * sphere.v[1]
         sphere.p[1] += cube.down - (sphere.p[1] - sphere.r)
 
     if sphere.p[1] + sphere.r > cube.up:
-        sphere.v[1] = -sphere.v[1]
+        sphere.v[1] = -sphere.s * sphere.v[1]
         sphere.p[1] -= (sphere.p[1] + sphere.r) - cube.up
 
 
     if sphere.p[0] - sphere.r < cube.front:
-        sphere.v[0] = - sphere.v[0]
+        sphere.v[0] = -sphere.s * sphere.v[0]
         sphere.p[0] += cube.front - (sphere.p[0] - sphere.r)
 
     if sphere.p[0] + sphere.r > cube.back:
-        sphere.v[0] = - sphere.v[0]
+        sphere.v[0] = -sphere.s * sphere.v[0]
         sphere.p[0] -= (sphere.p[0] + sphere.r) - cube.back
 
 
     if sphere.p[2] - sphere.r < cube.left:
-        sphere.v[2] = - sphere.v[2]
+        sphere.v[2] = -sphere.s * sphere.v[2]
         sphere.p[2] += cube.left - (sphere.p[2] - sphere.r)
 
     if sphere.p[2] + sphere.r > cube.right:
-        sphere.v[2] = - sphere.v[2]
+        sphere.v[2] = -sphere.s * sphere.v[2]
         sphere.p[2] -= (sphere.p[2] + sphere.r) - cube.right
 
 
@@ -171,7 +169,6 @@ def display():
 
     glutSwapBuffers()
     # glFlush()
-    print(sphere.s)
 
 glutInit()
 glutInitWindowSize(600, 600)
