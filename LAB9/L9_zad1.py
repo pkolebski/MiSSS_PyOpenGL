@@ -29,6 +29,10 @@ def keypress(key, x, y):
         sphere.s += 0.1
     if key == b'-':
         sphere.s -= 0.1
+    if key == b',':
+        sphere.gravity += 1
+    if key == b'.':
+        sphere.gravity -= 1
     if key == b't':
         sphere.v = np.random.rand(3) * 20
 
@@ -39,14 +43,16 @@ class dd(dict):
     __delattr__ = dict.__delitem__
 
 class Sphere():
-    def __init__(self, v=[1, -1, 0], p=[-5, 2, 3], col=[0, 0.5, 0], r=1, m=10, s=1.0, quad=None):
-        self.v = np.random.rand(3) * 5
+    def __init__(self, v=[1, -1, 0], p=[0, 3, 0], col=[0, 0.5, 0], r=1, m=10, s=1.0, quad=None, gravity=.9, aerodyn=0.47):
+        self.v = np.random.rand(3) * 10
         self.p = p
         self.col = col
         self.r = r
         self.quad = quad
         self.m = m
         self.s = s
+        self.gravity = gravity
+        self.aerodyn = aerodyn
 
     def draw(self):
         glLoadIdentity()
@@ -55,6 +61,7 @@ class Sphere():
         gluSphere(self.quad, self.r, 16, 16)
 
     def update(self, dt):
+        self.v += [np.sign(self.v[0]) * -1 * self.aerodyn, - self.gravity + (np.sign(self.v[1]) * -1 * self.aerodyn), np.sign(self.v[2]) * -1 * self.aerodyn]
         self.p[0] += dt * self.v[0]
         self.p[1] += dt * self.v[1]
         self.p[2] += dt * self.v[2]
