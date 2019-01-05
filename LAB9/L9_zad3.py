@@ -14,17 +14,17 @@ distance = 30
 cubes = []
 spheres = []
 cubes.append(Cube(0, 2, -10, 10, -10, 10, color=[0, 1, 0]))
-cubes.append(Cube(-2, 4, -12, -10, -10, 10))
-cubes.append(Cube(-2, 4, 12, 10, -10, 10))
-cubes.append(Cube(-2, 4, 10, -10, -12, -10))
-cubes.append(Cube(-2, 4, 10, -10, 12, 10))
-spheres.append(Sphere(v=[1, 0, 1], p=[-5, 3, -5], col=[1, 0, 0]))
-spheres.append(Sphere(v=[-1, 0, -1], p=[5, 3, 5], col=[0, 0, 1]))
+cubes.append(Cube(-2, 4, -12, -10, -10, 10)) #prawa ograniczenie: -10
+cubes.append(Cube(-2, 4, 12, 10, -10, 10)) #lewa ograniczenie: 10
+cubes.append(Cube(-2, 4, 10, -10, -12, -10)) #tylnia ograniczenie: -10
+cubes.append(Cube(-2, 4, 10, -10, 12, 10)) #przednia ograniczenie: 10
+spheres.append(Sphere(v=[4, 0, 4], p=[-5, 3, 0], col=[1, 0, 0]))
+spheres.append(Sphere(v=[-4, 0, -4], p=[5, 3, 0], col=[0, 0, 1]))
+Boundings = [-10,10]
 
 def mouseWheel(a, b, c, d):
     global distance
     distance += b
-
 
 def myszka(x, y):
     global myszkax, myszkay
@@ -32,7 +32,6 @@ def myszka(x, y):
     myszkay = y
     print(myszkax, myszkay)
     glutPostRedisplay()
-
 
 def keypress(key, x, y):
     global sphere
@@ -50,52 +49,46 @@ def keypress(key, x, y):
 
 def chceckSphereToCubeCollision(sphere, cube):
     if sphere.p[1] - sphere.r < cube.up:
-        sphere.v[1] = -sphere.v[1]
+        sphere.v[1] = -sphere.s * sphere.v[1]
         sphere.p[1] += cube.up - (sphere.p[1] - sphere.r)
 
-
-    # if sphere.p[0] - sphere.r > cube.front:
-    #     sphere.v[0] = -sphere.s * sphere.v[0]
-    #     sphere.p[0] += cube.front - (sphere.p[0] - sphere.r)
-    #
-    # if sphere.p[0] + sphere.r < cube.back:
-    #     sphere.v[0] = -sphere.s * sphere.v[0]
-    #     sphere.p[0] -= (sphere.p[0] + sphere.r) - cube.back
-    #
-    #
-    # if sphere.p[2] + sphere.r > cube.left:
-    #     sphere.v[2] = -sphere.s * sphere.v[2]
-    #     sphere.p[2] += cube.left - (sphere.p[2] - sphere.r)
-    #
-    # if sphere.p[2] + sphere.r < cube.right:
-    #     sphere.v[2] = -sphere.s * sphere.v[2]
-    #     sphere.p[2] -= (sphere.p[2] + sphere.r) - cube.right
-
-def check_sphere_to_cube_collision(*obj):
-    pass
+def check_sphere_to_cube_collision(sphere, cube):
+    if sphere.p[0] - sphere.r < cube.left:
+        sphere.v[0] = -sphere.s * sphere.v[0]
+        sphere.p[0] += cube.left + (sphere.p[0] - sphere.r)
 
 def check_sphere_to_sphere_collision(obj1, obj2):
-    if all(abs(obj1.p - obj2.p) < obj1.r + obj2.r):
-        print("KOLIZJA")
-        return True
-    return False
+    return abs((obj1.p[0] - obj2.p[0])**2 + (obj1.p[2] - obj2.p[2])**2) <= (obj1.r + obj2.r)**2
 
+# def process_sphere_to_sphere_collision0(obj1, obj2):
+#     pp = np.mean([obj1.p, obj2.p])
+#     n = normalize(obj1.p - obj2.p)
+#     if not (obj1.v - obj2.v) * n < 0:
+#         n = normalize(obj2.p - obj1.p)
+#
+#         if abs(n[0]) <= abs(n[1]) and abs(n[0]) <= abs(n[2]): p = np.array([0, n[2], -n[1]])
+#         if abs(n[1]) <= abs(n[0]) and abs(n[1]) <= abs(n[2]): p = np.array([-n[2], 0, n[0]])
+#         if abs(n[2]) <= abs(n[0]) and abs(n[2]) <= abs(n[1]): p = np.array([n[1], -n[0], 0])
+#         t = normalize(p)
+#         k = np.cross(n, t)
+#
+#         a = np.eye(3)[0, :]
+#         b = np.eye(3)[1, :]
+#         c = np.eye(3)[2, :]
+#         M = [n, t, k]
+#         Ontk = M @ [a,b,c]
+#         print(Ontk)
 
 def process_sphere_to_sphere_collision(obj1, obj2):
-    pp = np.mean([obj1.p, obj2.p])
-    n = normalize(obj1.p - obj2.p)
-    if not (obj1.v - obj2.v) * n < 0:
-        n = normalize(obj2.p - obj1.p)
-    if abs(n[0]) <= abs(n[1]) and abs(n[0]) <= abs(n[2]): p = np.array([0, n[2], -n[1]])
-    if abs(n[1]) <= abs(n[0]) and abs(n[1]) <= abs(n[2]): p = np.array([-n[2], 0, n[0]])
-    if abs(n[2]) <= abs(n[0]) and abs(n[2]) <= abs(n[1]): p = np.array([n[1], -n[0], 0])
-    t = normalize(p)
-    k = np.cross(n, t)
+    fDistance = np.sqrt((obj1.p[0] - obj2.p[0])**2 + (obj1.p[2] - obj2.p[2])**2)
+    fOverlap = 0.5 * (fDistance - obj1.r - obj2.r)
 
-    a = np.eye(3)[0, :]
-    b = np.eye(3)[1, :]
-    c = np.eye(3)[2, :]
-    M = [n, t, k]
+    obj1.v[0] -= fOverlap * (obj1.p[0] - obj2.p[0]) / fDistance
+    obj1.v[2] -= fOverlap * (obj1.p[2] - obj2.p[2]) / fDistance
+
+    obj2.v[0] += fOverlap * (obj1.p[0] - obj2.p[0]) / fDistance
+    obj2.v[2] += fOverlap * (obj1.p[2] - obj2.p[2]) / fDistance
+
 
 # wymuszenie częstotliwości odświeżania
 def cupdate():
@@ -132,7 +125,9 @@ def display():
             if sphere != sphere2:
                 if check_sphere_to_sphere_collision(sphere, sphere2):
                     process_sphere_to_sphere_collision(sphere, sphere2)
-        # chceckSphereToCubeCollision(sphere, cubes[0])
+                    continue
+        chceckSphereToCubeCollision(sphere, cubes[0])
+        check_sphere_to_cube_collision(sphere, cubes[1])
         sphere.update(0.2)
         sphere.draw()
 
