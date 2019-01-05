@@ -5,6 +5,7 @@ from math import *
 import time
 import numpy as np
 from utils import Sphere, Cube, normalize
+from Collision import chceck, chceck2, chceck3, chceck4, chceck5
 
 tick = 0
 myszkax = 429
@@ -18,9 +19,9 @@ cubes.append(Cube(-2, 4, -12, -10, -10, 10)) #prawa ograniczenie: -10
 cubes.append(Cube(-2, 4, 12, 10, -10, 10)) #lewa ograniczenie: 10
 cubes.append(Cube(-2, 4, 10, -10, -12, -10)) #tylnia ograniczenie: -10
 cubes.append(Cube(-2, 4, 10, -10, 12, 10)) #przednia ograniczenie: 10
-spheres.append(Sphere(v=[4, 0, 4], p=[-5, 3, 0], col=[1, 0, 0]))
-spheres.append(Sphere(v=[-4, 0, -4], p=[5, 3, 0], col=[0, 0, 1]))
-Boundings = [-10,10]
+spheres.append(Sphere(v=[4, 0, 5], p=[-5, 3, -5], col=[1, 0, 0]))
+spheres.append(Sphere(v=[-7, 0, -5], p=[5, 3, 5], col=[0, 0, 1]))
+spheres.append(Sphere(v=[-3, 0, -7], p=[3, 3, 0], col=[0, 1, 0]))
 
 def mouseWheel(a, b, c, d):
     global distance
@@ -46,17 +47,6 @@ def keypress(key, x, y):
     if key == b't':
         sphere.v = np.random.rand(3) * 20
 
-
-def chceckSphereToCubeCollision(sphere, cube):
-    if sphere.p[1] - sphere.r < cube.up:
-        sphere.v[1] = -sphere.s * sphere.v[1]
-        sphere.p[1] += cube.up - (sphere.p[1] - sphere.r)
-
-def check_sphere_to_cube_collision(sphere, cube):
-    if sphere.p[0] - sphere.r < cube.left:
-        sphere.v[0] = -sphere.s * sphere.v[0]
-        sphere.p[0] += cube.left + (sphere.p[0] - sphere.r)
-
 def check_sphere_to_sphere_collision(obj1, obj2):
     return abs((obj1.p[0] - obj2.p[0])**2 + (obj1.p[2] - obj2.p[2])**2) <= (obj1.r + obj2.r)**2
 
@@ -79,15 +69,44 @@ def check_sphere_to_sphere_collision(obj1, obj2):
 #         Ontk = M @ [a,b,c]
 #         print(Ontk)
 
-def process_sphere_to_sphere_collision(obj1, obj2):
+def static_collision(obj1, obj2):
     fDistance = np.sqrt((obj1.p[0] - obj2.p[0])**2 + (obj1.p[2] - obj2.p[2])**2)
     fOverlap = 0.5 * (fDistance - obj1.r - obj2.r)
 
-    obj1.v[0] -= fOverlap * (obj1.p[0] - obj2.p[0]) / fDistance
-    obj1.v[2] -= fOverlap * (obj1.p[2] - obj2.p[2]) / fDistance
+    obj1.v[0] -= obj1.s * fOverlap * (obj1.p[0] - obj2.p[0]) / fDistance
+    obj1.v[2] -= obj1.s * fOverlap * (obj1.p[2] - obj2.p[2]) / fDistance
 
-    obj2.v[0] += fOverlap * (obj1.p[0] - obj2.p[0]) / fDistance
-    obj2.v[2] += fOverlap * (obj1.p[2] - obj2.p[2]) / fDistance
+    obj2.v[0] += obj2.s * fOverlap * (obj1.p[0] - obj2.p[0]) / fDistance
+    obj2.v[2] += obj2.s * fOverlap * (obj1.p[2] - obj2.p[2]) / fDistance
+
+def dynamic_collision(obj1, obj2):
+    #dystans pomiedzy kulkami
+    fDistance = np.sqrt((obj1.p[0] - obj2.p[0])**2 + (obj1.p[2] - obj2.p[2])**2)
+
+    #wektory normalne
+    nx = (obj1.p[0] - obj2.p[0]) / fDistance
+    nz = (obj1.p[2] - obj2.p[2]) / fDistance
+
+    #wektory t
+    tx = -nz
+    tz = nx
+
+    #dot product t
+    dpTan1 = obj1.v[0] * tx + obj1.v[2] * tz
+    dpTan2 = obj2.v[0] * tx + obj2.v[2] * tz
+
+    #dot product normal
+    dpNorm1 = obj1.v[0] * nx + obj1.v[2] * nz
+    dpNorm2 = obj2.v[0] * nx + obj2.v[2] * nz
+
+    #conservation of momentum
+    m1 = (dpNorm1 * (obj1.m - obj2.m) + 1.5 * obj2.m * dpNorm2) / (obj1.m + obj2.m)
+    m2 = (dpNorm2 * (obj2.m - obj1.m) + 1.5 * obj1.m * dpNorm1) / (obj1.m + obj2.m)
+
+    obj1.v[0] = obj1.s * tx * dpTan1 + nx * m1
+    obj1.v[2] = obj1.s * tz * dpTan1 + nz * m1
+    obj2.v[0] = obj1.s * tx * dpTan2 + nx * m2
+    obj2.v[2] = obj1.s * tz * dpTan2 + nz * m2
 
 
 # wymuszenie częstotliwości odświeżania
@@ -108,7 +127,6 @@ def display():
     glLoadIdentity()
     glFrustum(-1, 1, -1, 1, 1, 100)
 
-
     eyeX = distance * np.cos(myszkay / 100) * np.sin(myszkax / 100)
     eyeY = distance * np.sin(myszkay / 100) * np.sin(myszkax / 100)
     eyeZ = distance * np.cos(myszkax / 100)
@@ -120,23 +138,23 @@ def display():
     glLoadIdentity()
     for cube in cubes:
         cube.draw()
+
     for sphere in spheres:
         for sphere2 in spheres:
             if sphere != sphere2:
                 if check_sphere_to_sphere_collision(sphere, sphere2):
-                    process_sphere_to_sphere_collision(sphere, sphere2)
-                    continue
-        chceckSphereToCubeCollision(sphere, cubes[0])
-        check_sphere_to_cube_collision(sphere, cubes[1])
+                    dynamic_collision(sphere, sphere2)
+
+        chceck(sphere, cubes[0])
+        chceck2(sphere, cubes[1])
+        chceck3(sphere, cubes[2])
+        chceck5(sphere, cubes[3])
+        chceck4(sphere, cubes[4])
         sphere.update(0.2)
         sphere.draw()
 
-    check_sphere_to_sphere_collision(spheres[0], spheres[1])
-    # updateSphereCollision(sphere)
-
-
     glutSwapBuffers()
-    # glFlush()
+    #glFlush()
 
 glutInit()
 glutInitWindowSize(600, 600)

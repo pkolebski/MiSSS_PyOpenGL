@@ -9,13 +9,13 @@ def normalize(vec):
 
 
 class Sphere():
-	def __init__(self, v=[0, 0, 0], p=[0, 3, 0], col=[0, 0.5, 0], r=1, m=10, s=1.0, quad=None, gravity=0.9, aerodyn=0.1):
+	def __init__(self, v=[0, 0, 0], p=[0, 3, 0], col=[0, 0.5, 0], r=1, m=0.1, s=1, quad=None, gravity=0.9, aerodyn=0.1):
 		self.v = np.array(v, dtype=np.float64)
 		self.p = np.array(p, dtype=np.float64)
 		self.col = col
 		self.r = np.array(r, dtype=np.float64)
 		self.quad = quad
-		self.m = m
+		self.m = r*m
 		self.s = s
 		self.gravity = gravity
 		self.aerodyn = aerodyn
@@ -83,3 +83,5 @@ class Cube():
 				glVertex3fv(self.vertices[link[i]])
 			glEnd()
 		if not self.fill: glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
+
+
