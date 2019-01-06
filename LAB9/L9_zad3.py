@@ -5,7 +5,7 @@ from math import *
 import time
 import numpy as np
 from utils import Sphere, Cube, normalize
-from Collision import chceck, chceck2, chceck3, chceck4, chceck5
+from Collision import chceckSphereToCubeCollision
 
 tick = 0
 myszkax = 429
@@ -19,19 +19,18 @@ distance = 30
 cubes = []
 spheres = []
 cubes.append(Cube(0, 2, -10, 10, -10, 10, color=[0, 1, 0]))
-cubes.append(Cube(-2, 4, -12, -10, -10, 10))  # prawa ograniczenie: -10
-cubes.append(Cube(-2, 4, 12, 10, -10, 10))  # lewa ograniczenie: 10
+cubes.append(Cube(-2, 4, -12, -10, -12, 12))  # prawa ograniczenie: -10
+cubes.append(Cube(-2, 4, 12, 10, -12, 12))  # lewa ograniczenie: 10
 cubes.append(Cube(-2, 4, 10, -10, -12, -10))  # tylnia ograniczenie: -10
 cubes.append(Cube(-2, 4, 10, -10, 12, 10))  # przednia ograniczenie: 10
-spheres.append(Sphere(v=[0, 0, 0], p=[-5, 3, -5], col=[1, 0, 0]))
-spheres.append(Sphere(v=[0, 0, 0], p=[5, 3, 5], col=[0, 0, 1]))
-spheres.append(Sphere(v=[0, 0, 0], p=[3, 3, 0], col=[1, 0, 0.5]))
+spheres.append(Sphere(v=[5, 0, 5], p=[-5, 3, -5], col=[1, 0, 0]))
+spheres.append(Sphere(v=[2, 0, 4], p=[5, 3, 5], col=[0, 0, 1]))
+spheres.append(Sphere(v=[7, 0, 5], p=[3, 3, 0], col=[1, 0, 0.5]))
 
 
 def mouseWheel(a, b, c, d):
     global distance
     distance += b
-
 
 def myszka(x, y):
     global myszkax, myszkay
@@ -40,9 +39,8 @@ def myszka(x, y):
     print(myszkax, myszkay)
     glutPostRedisplay()
 
-
 def keypress(key, x, y):
-    global sphere
+    global sphere, Bat
     if key == b'+':
         sphere.s += 0.1
     if key == b'-':
@@ -52,7 +50,7 @@ def keypress(key, x, y):
     if key == b'.':
         sphere.gravity -= 1
     if key == b't':
-        sphere.v = np.random.rand(3) * 20
+        sphere.v = [np.random.rand(1)*3,0,np.random.rand(1)*3]
     if key == b'q':
         global which_ball
         global hitting_angle
@@ -61,6 +59,7 @@ def keypress(key, x, y):
         hitting_angle=0
     if key == b'f':
         hitting_angle += 0.1
+
         if hitting_angle>=6.27:
             hitting_angle=0
             power = 0
@@ -70,7 +69,7 @@ def keypress(key, x, y):
             hitting_angle=06.28
     if key ==b'p':
         power+=1
-        if power>30:
+        if power>10:
             power=0
     if key == b'v':
         global chosen_sphere
@@ -79,7 +78,6 @@ def keypress(key, x, y):
 
 def check_sphere_to_sphere_collision(obj1, obj2):
     return abs((obj1.p[0] - obj2.p[0]) ** 2 + (obj1.p[2] - obj2.p[2]) ** 2) <= (obj1.r + obj2.r) ** 2
-
 
 # def process_sphere_to_sphere_collision0(obj1, obj2):
 #     pp = np.mean([obj1.p, obj2.p])
@@ -100,16 +98,15 @@ def check_sphere_to_sphere_collision(obj1, obj2):
 #         Ontk = M @ [a,b,c]
 #         print(Ontk)
 
-def static_collision(obj1, obj2):
-    fDistance = np.sqrt((obj1.p[0] - obj2.p[0]) ** 2 + (obj1.p[2] - obj2.p[2]) ** 2)
-    fOverlap = 0.5 * (fDistance - obj1.r - obj2.r)
-
-    obj1.v[0] -= obj1.s * fOverlap * (obj1.p[0] - obj2.p[0]) / fDistance
-    obj1.v[2] -= obj1.s * fOverlap * (obj1.p[2] - obj2.p[2]) / fDistance
-
-    obj2.v[0] += obj2.s * fOverlap * (obj1.p[0] - obj2.p[0]) / fDistance
-    obj2.v[2] += obj2.s * fOverlap * (obj1.p[2] - obj2.p[2]) / fDistance
-
+# def static_collision(obj1, obj2):
+#     fDistance = np.sqrt((obj1.p[0] - obj2.p[0]) ** 2 + (obj1.p[2] - obj2.p[2]) ** 2)
+#     fOverlap = 0.5 * (fDistance - obj1.r - obj2.r)
+#
+#     obj1.v[0] -= obj1.s * fOverlap * (obj1.p[0] - obj2.p[0]) / fDistance
+#     obj1.v[2] -= obj1.s * fOverlap * (obj1.p[2] - obj2.p[2]) / fDistance
+#
+#     obj2.v[0] += obj2.s * fOverlap * (obj1.p[0] - obj2.p[0]) / fDistance
+#     obj2.v[2] += obj2.s * fOverlap * (obj1.p[2] - obj2.p[2]) / fDistance
 
 def dynamic_collision(obj1, obj2):
     # dystans pomiedzy kulkami
@@ -148,8 +145,14 @@ def hit_ball(angle,pow):
     hit = cue_hit(angle)
     hit[0] *=pow
     hit[2] *=pow
-    spheres[which_ball%3].v = hit
+    spheres[which_ball%3].v += hit
 
+def Bat_update(bat, angle):
+    temp = cue_hit(angle)
+    bat.left = bat.left * temp[0]
+    bat.right = bat.right * temp[0]
+    bat.back = bat.back * temp[2]
+    bat.front = bat.front * temp[2]
 
 # wymuszenie częstotliwości odświeżania
 def cupdate():
@@ -159,7 +162,6 @@ def cupdate():
         return False
     tick = ltime
     return True
-
 
 # pętla wyświetlająca
 def display():
@@ -179,26 +181,40 @@ def display():
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     glLoadIdentity()
+
     for cube in cubes:
         cube.draw()
-
+    fill = False
+    i=1
     for sphere in spheres:
+        sphere.update(0.2, cubes[0].down)
+        chceckSphereToCubeCollision(sphere, cubes[0])
         for sphere2 in spheres:
             if sphere != sphere2:
                 if check_sphere_to_sphere_collision(sphere, sphere2):
                     dynamic_collision(sphere, sphere2)
 
-        chceck(sphere, cubes[0])
-        chceck2(sphere, cubes[1])
-        chceck3(sphere, cubes[2])
-        chceck5(sphere, cubes[3])
-        chceck4(sphere, cubes[4])
         sphere.col = sphere.orginal_col
         spheres[which_ball % 3].col = np.random.rand(3)
 
+        Cs = spheres[which_ball % 3].p
+        Bat = Cube(0,1,100,100,100,100, color=[0, 0, 0], fill=fill)
+        Bat.draw()
 
-        print(hitting_angle,power)
-        sphere.update(0.2)
+        if abs(spheres[which_ball % 3].v[0]) <= 0.1  or abs(spheres[which_ball % 3].v[2]) <= 0.1:
+            i+=1
+
+        if abs(spheres[which_ball % 3].v[0]) <= 0.1 and i > 2 or abs(spheres[which_ball % 3].v[2]) <= 0.1 and i >2:
+            fill = True
+            Bat = Cube(Cs[1], Cs[1] + 1, Cs[0] - 0.5, Cs[0] + 0.5, Cs[2] + 7, Cs[2] + 1, color=[0, 0, 0], fill=fill)
+            Bat_update(Bat, hitting_angle)
+            Bat.draw()
+
+        elif abs(spheres[which_ball % 3].v[0]) > 0.1 or abs(spheres[which_ball % 3].v[2]) > 0.1:
+            fill = False
+            i=1
+
+        print(hitting_angle, power)
         sphere.draw()
 
 

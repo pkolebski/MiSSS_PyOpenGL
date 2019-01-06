@@ -27,8 +27,8 @@ class Sphere():
         glColor3fv(self.col)
         gluSphere(self.quad, self.r, 16, 16)
 
-    def update(self, dt):
-        if self.v[1] < 2:
+    def update(self, dt, floor):
+        if self.v[1] < floor:
             self.v += [
                 np.sign(self.v[0]) * -1 * self.aerodyn,
                 np.sign(self.v[1]) * -1 * self.aerodyn,
