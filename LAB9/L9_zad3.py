@@ -11,21 +11,27 @@ tick = 0
 myszkax = 429
 myszkay = 418
 
+which_ball = 0
+hitting_angle = 0
+power=0
+
 distance = 30
 cubes = []
 spheres = []
 cubes.append(Cube(0, 2, -10, 10, -10, 10, color=[0, 1, 0]))
-cubes.append(Cube(-2, 4, -12, -10, -10, 10)) #prawa ograniczenie: -10
-cubes.append(Cube(-2, 4, 12, 10, -10, 10)) #lewa ograniczenie: 10
-cubes.append(Cube(-2, 4, 10, -10, -12, -10)) #tylnia ograniczenie: -10
-cubes.append(Cube(-2, 4, 10, -10, 12, 10)) #przednia ograniczenie: 10
-spheres.append(Sphere(v=[4, 0, 5], p=[-5, 3, -5], col=[1, 0, 0]))
-spheres.append(Sphere(v=[-7, 0, -5], p=[5, 3, 5], col=[0, 0, 1]))
-spheres.append(Sphere(v=[-3, 0, -7], p=[3, 3, 0], col=[0, 1, 0]))
+cubes.append(Cube(-2, 4, -12, -10, -10, 10))  # prawa ograniczenie: -10
+cubes.append(Cube(-2, 4, 12, 10, -10, 10))  # lewa ograniczenie: 10
+cubes.append(Cube(-2, 4, 10, -10, -12, -10))  # tylnia ograniczenie: -10
+cubes.append(Cube(-2, 4, 10, -10, 12, 10))  # przednia ograniczenie: 10
+spheres.append(Sphere(v=[0, 0, 0], p=[-5, 3, -5], col=[1, 0, 0]))
+spheres.append(Sphere(v=[0, 0, 0], p=[5, 3, 5], col=[0, 0, 1]))
+spheres.append(Sphere(v=[0, 0, 0], p=[3, 3, 0], col=[1, 0, 0.5]))
+
 
 def mouseWheel(a, b, c, d):
     global distance
     distance += b
+
 
 def myszka(x, y):
     global myszkax, myszkay
@@ -33,6 +39,7 @@ def myszka(x, y):
     myszkay = y
     print(myszkax, myszkay)
     glutPostRedisplay()
+
 
 def keypress(key, x, y):
     global sphere
@@ -46,9 +53,33 @@ def keypress(key, x, y):
         sphere.gravity -= 1
     if key == b't':
         sphere.v = np.random.rand(3) * 20
+    if key == b'q':
+        global which_ball
+        global hitting_angle
+        global power
+        which_ball += 1
+        hitting_angle=0
+    if key == b'f':
+        hitting_angle += 0.1
+        if hitting_angle>=6.27:
+            hitting_angle=0
+            power = 0
+    if key == b'g':
+        hitting_angle -= 0.1
+        if hitting_angle<=0:
+            hitting_angle=06.28
+    if key ==b'p':
+        power+=1
+        if power>30:
+            power=0
+    if key == b'v':
+        global chosen_sphere
+        hit_ball(hitting_angle,power)
+
 
 def check_sphere_to_sphere_collision(obj1, obj2):
-    return abs((obj1.p[0] - obj2.p[0])**2 + (obj1.p[2] - obj2.p[2])**2) <= (obj1.r + obj2.r)**2
+    return abs((obj1.p[0] - obj2.p[0]) ** 2 + (obj1.p[2] - obj2.p[2]) ** 2) <= (obj1.r + obj2.r) ** 2
+
 
 # def process_sphere_to_sphere_collision0(obj1, obj2):
 #     pp = np.mean([obj1.p, obj2.p])
@@ -70,7 +101,7 @@ def check_sphere_to_sphere_collision(obj1, obj2):
 #         print(Ontk)
 
 def static_collision(obj1, obj2):
-    fDistance = np.sqrt((obj1.p[0] - obj2.p[0])**2 + (obj1.p[2] - obj2.p[2])**2)
+    fDistance = np.sqrt((obj1.p[0] - obj2.p[0]) ** 2 + (obj1.p[2] - obj2.p[2]) ** 2)
     fOverlap = 0.5 * (fDistance - obj1.r - obj2.r)
 
     obj1.v[0] -= obj1.s * fOverlap * (obj1.p[0] - obj2.p[0]) / fDistance
@@ -79,27 +110,28 @@ def static_collision(obj1, obj2):
     obj2.v[0] += obj2.s * fOverlap * (obj1.p[0] - obj2.p[0]) / fDistance
     obj2.v[2] += obj2.s * fOverlap * (obj1.p[2] - obj2.p[2]) / fDistance
 
-def dynamic_collision(obj1, obj2):
-    #dystans pomiedzy kulkami
-    fDistance = np.sqrt((obj1.p[0] - obj2.p[0])**2 + (obj1.p[2] - obj2.p[2])**2)
 
-    #wektory normalne
+def dynamic_collision(obj1, obj2):
+    # dystans pomiedzy kulkami
+    fDistance = np.sqrt((obj1.p[0] - obj2.p[0]) ** 2 + (obj1.p[2] - obj2.p[2]) ** 2)
+
+    # wektory normalne
     nx = (obj1.p[0] - obj2.p[0]) / fDistance
     nz = (obj1.p[2] - obj2.p[2]) / fDistance
 
-    #wektory t
+    # wektory t
     tx = -nz
     tz = nx
 
-    #dot product t
+    # dot product t
     dpTan1 = obj1.v[0] * tx + obj1.v[2] * tz
     dpTan2 = obj2.v[0] * tx + obj2.v[2] * tz
 
-    #dot product normal
+    # dot product normal
     dpNorm1 = obj1.v[0] * nx + obj1.v[2] * nz
     dpNorm2 = obj2.v[0] * nx + obj2.v[2] * nz
 
-    #conservation of momentum
+    # conservation of momentum
     m1 = (dpNorm1 * (obj1.m - obj2.m) + 1.5 * obj2.m * dpNorm2) / (obj1.m + obj2.m)
     m2 = (dpNorm2 * (obj2.m - obj1.m) + 1.5 * obj1.m * dpNorm1) / (obj1.m + obj2.m)
 
@@ -109,18 +141,29 @@ def dynamic_collision(obj1, obj2):
     obj2.v[2] = obj1.s * tz * dpTan2 + nz * m2
 
 
+def cue_hit(angle):
+    return [cos(angle%6.24), 0, sin(angle%6.24) ]
+
+def hit_ball(angle,pow):
+    hit = cue_hit(angle)
+    hit[0] *=pow
+    hit[2] *=pow
+    spheres[which_ball%3].v = hit
+
+
 # wymuszenie częstotliwości odświeżania
 def cupdate():
     global tick
     ltime = time.clock()
-    if ltime < tick + 0.1: # max 10 ramek / s
+    if ltime < tick + 0.1:  # max 10 ramek / s
         return False
     tick = ltime
     return True
 
+
 # pętla wyświetlająca
 def display():
-    global sphere, myszkax, myszkay, distance
+    global sphere, myszkax, myszkay, distance,hitting_angle,which_ball,power
     if not cupdate():
         return
     glMatrixMode(GL_PROJECTION)
@@ -150,11 +193,18 @@ def display():
         chceck3(sphere, cubes[2])
         chceck5(sphere, cubes[3])
         chceck4(sphere, cubes[4])
+        sphere.col = sphere.orginal_col
+        spheres[which_ball % 3].col = np.random.rand(3)
+
+
+        print(hitting_angle,power)
         sphere.update(0.2)
         sphere.draw()
 
+
     glutSwapBuffers()
-    #glFlush()
+    # glFlush()
+
 
 glutInit()
 glutInitWindowSize(600, 600)
@@ -179,4 +229,5 @@ glEnable(GL_COLOR_MATERIAL)
 for sphere in spheres:
     sphere.quad = gluNewQuadric()
     gluQuadricNormals(sphere.quad, GLU_SMOOTH)
+
 glutMainLoop()
