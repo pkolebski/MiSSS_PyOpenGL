@@ -9,7 +9,7 @@ def normalize(vec):
 
 
 class Sphere():
-    def __init__(self, v=[0, 0, 0], p=[0, 3, 0], col=[0, 0.5, 0], r=1, m=0.1, s=1, quad=None, gravity=0.9, aerodyn=0.1):
+    def __init__(self, v=[0, 0, 0], p=[0, 3, 0], col=[0, 0.5, 0], r=1, m=1, s=1, quad=None, gravity=1.5, aerodyn=0.2):
         self.v = np.array(v, dtype=np.float64)
         self.p = np.array(p, dtype=np.float64)
         self.col = col
@@ -28,7 +28,8 @@ class Sphere():
         gluSphere(self.quad, self.r, 16, 16)
 
     def update(self, dt, floor):
-        if self.v[1] < floor:
+        if self.p[1] - self.r < floor:
+            print("XD")
             self.v += [
                 np.sign(self.v[0]) * -1 * self.aerodyn,
                 np.sign(self.v[1]) * -1 * self.aerodyn,
@@ -74,8 +75,12 @@ class Cube():
             [0, 3, 7, 4]
         ]
 
-    def draw(self):
+    def draw(self, angle=0, sphere=[]):
         glLoadIdentity()
+        if angle != 0:
+            glTranslate(sphere[0], sphere[1], sphere[2])
+            glRotate(angle, 0, 1, 0)
+            glTranslate(-sphere[0], -sphere[1], -sphere[2])
         glColor3fv(self.color)
         if not self.fill: glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
         for link in self.links:

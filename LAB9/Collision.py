@@ -14,7 +14,7 @@ def chceckSphereToCubeCollision(sphere, cube):
 
     if sphere.p[2] - sphere.r < cube.left:
         sphere.v[2] = -sphere.s * sphere.v[2]
-        sphere.p[2] -= cube.left - (sphere.p[2] + sphere.r)
+        sphere.p[2] += cube.left - (sphere.p[2] - sphere.r)
 
     if sphere.p[2] + sphere.r > cube.right:
         sphere.v[2] = -sphere.s * sphere.v[2]

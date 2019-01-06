@@ -13,7 +13,9 @@ myszkay = 418
 
 which_ball = 0
 hitting_angle = 0
-power=0
+power = 10
+i=1
+XD = [0, 0, 0]
 
 distance = 30
 cubes = []
@@ -36,7 +38,6 @@ def myszka(x, y):
     global myszkax, myszkay
     myszkax = x
     myszkay = y
-    print(myszkax, myszkay)
     glutPostRedisplay()
 
 def keypress(key, x, y):
@@ -60,13 +61,13 @@ def keypress(key, x, y):
     if key == b'f':
         hitting_angle += 0.1
 
-        if hitting_angle>=6.27:
-            hitting_angle=0
+        if hitting_angle >= np.pi:
+            hitting_angle = -np.pi
             power = 0
     if key == b'g':
         hitting_angle -= 0.1
-        if hitting_angle<=0:
-            hitting_angle=06.28
+        if hitting_angle <= -np.pi:
+            hitting_angle = np.pi
     if key ==b'p':
         power+=1
         if power>10:
@@ -79,37 +80,12 @@ def keypress(key, x, y):
 def check_sphere_to_sphere_collision(obj1, obj2):
     return abs((obj1.p[0] - obj2.p[0]) ** 2 + (obj1.p[2] - obj2.p[2]) ** 2) <= (obj1.r + obj2.r) ** 2
 
-# def process_sphere_to_sphere_collision0(obj1, obj2):
-#     pp = np.mean([obj1.p, obj2.p])
-#     n = normalize(obj1.p - obj2.p)
-#     if not (obj1.v - obj2.v) * n < 0:
-#         n = normalize(obj2.p - obj1.p)
-#
-#         if abs(n[0]) <= abs(n[1]) and abs(n[0]) <= abs(n[2]): p = np.array([0, n[2], -n[1]])
-#         if abs(n[1]) <= abs(n[0]) and abs(n[1]) <= abs(n[2]): p = np.array([-n[2], 0, n[0]])
-#         if abs(n[2]) <= abs(n[0]) and abs(n[2]) <= abs(n[1]): p = np.array([n[1], -n[0], 0])
-#         t = normalize(p)
-#         k = np.cross(n, t)
-#
-#         a = np.eye(3)[0, :]
-#         b = np.eye(3)[1, :]
-#         c = np.eye(3)[2, :]
-#         M = [n, t, k]
-#         Ontk = M @ [a,b,c]
-#         print(Ontk)
 
-# def static_collision(obj1, obj2):
-#     fDistance = np.sqrt((obj1.p[0] - obj2.p[0]) ** 2 + (obj1.p[2] - obj2.p[2]) ** 2)
-#     fOverlap = 0.5 * (fDistance - obj1.r - obj2.r)
-#
-#     obj1.v[0] -= obj1.s * fOverlap * (obj1.p[0] - obj2.p[0]) / fDistance
-#     obj1.v[2] -= obj1.s * fOverlap * (obj1.p[2] - obj2.p[2]) / fDistance
-#
-#     obj2.v[0] += obj2.s * fOverlap * (obj1.p[0] - obj2.p[0]) / fDistance
-#     obj2.v[2] += obj2.s * fOverlap * (obj1.p[2] - obj2.p[2]) / fDistance
-
-def dynamic_collision(obj1, obj2):
+def dynamic_collision(obj1, obj2, dt):
+    obj1.p -= dt * obj1.v
+    obj2.p -= dt * obj2.v
     # dystans pomiedzy kulkami
+
     fDistance = np.sqrt((obj1.p[0] - obj2.p[0]) ** 2 + (obj1.p[2] - obj2.p[2]) ** 2)
 
     # wektory normalne
@@ -129,8 +105,8 @@ def dynamic_collision(obj1, obj2):
     dpNorm2 = obj2.v[0] * nx + obj2.v[2] * nz
 
     # conservation of momentum
-    m1 = (dpNorm1 * (obj1.m - obj2.m) + 1.5 * obj2.m * dpNorm2) / (obj1.m + obj2.m)
-    m2 = (dpNorm2 * (obj2.m - obj1.m) + 1.5 * obj1.m * dpNorm1) / (obj1.m + obj2.m)
+    m1 = (dpNorm1 * (obj1.m - obj2.m) + 1. * obj2.m * dpNorm2) / (obj1.m + obj2.m)
+    m2 = (dpNorm2 * (obj2.m - obj1.m) + 1. * obj1.m * dpNorm1) / (obj1.m + obj2.m)
 
     obj1.v[0] = obj1.s * tx * dpTan1 + nx * m1
     obj1.v[2] = obj1.s * tz * dpTan1 + nz * m1
@@ -139,13 +115,15 @@ def dynamic_collision(obj1, obj2):
 
 
 def cue_hit(angle):
-    return [cos(angle%6.24), 0, sin(angle%6.24) ]
+    global XD
+    XD = [cos(angle), 0, sin(angle)]
+    return XD
 
-def hit_ball(angle,pow):
+def hit_ball(angle, pow):
     hit = cue_hit(angle)
-    hit[0] *=pow
-    hit[2] *=pow
-    spheres[which_ball%3].v += hit
+    hit[0] *= pow
+    hit[2] *= pow
+    spheres[which_ball % 3].v += hit
 
 def Bat_update(bat, angle):
     temp = cue_hit(angle)
@@ -165,7 +143,7 @@ def cupdate():
 
 # pętla wyświetlająca
 def display():
-    global sphere, myszkax, myszkay, distance,hitting_angle,which_ball,power
+    global sphere, myszkax, myszkay, distance, hitting_angle, which_ball, power, i
     if not cupdate():
         return
     glMatrixMode(GL_PROJECTION)
@@ -185,42 +163,78 @@ def display():
     for cube in cubes:
         cube.draw()
     fill = False
-    i=1
+    # i=1
     for sphere in spheres:
-        sphere.update(0.2, cubes[0].down)
+        sphere.update(0.2, cubes[0].up)
         chceckSphereToCubeCollision(sphere, cubes[0])
         for sphere2 in spheres:
             if sphere != sphere2:
                 if check_sphere_to_sphere_collision(sphere, sphere2):
-                    dynamic_collision(sphere, sphere2)
+                    # dynamic_collision(sphere, sphere2, 0.2)
+                    sphere_to_sphere_collision(sphere, sphere2, 0.2)
 
         sphere.col = sphere.orginal_col
-        spheres[which_ball % 3].col = np.random.rand(3)
+        spheres[which_ball % 3].col = [1, 1, 1]
 
-        Cs = spheres[which_ball % 3].p
-        Bat = Cube(0,1,100,100,100,100, color=[0, 0, 0], fill=fill)
-        Bat.draw()
 
-        if abs(spheres[which_ball % 3].v[0]) <= 0.1  or abs(spheres[which_ball % 3].v[2]) <= 0.1:
-            i+=1
-
-        if abs(spheres[which_ball % 3].v[0]) <= 0.1 and i > 2 or abs(spheres[which_ball % 3].v[2]) <= 0.1 and i >2:
-            fill = True
-            Bat = Cube(Cs[1], Cs[1] + 1, Cs[0] - 0.5, Cs[0] + 0.5, Cs[2] + 7, Cs[2] + 1, color=[0, 0, 0], fill=fill)
-            Bat_update(Bat, hitting_angle)
-            Bat.draw()
-
-        elif abs(spheres[which_ball % 3].v[0]) > 0.1 or abs(spheres[which_ball % 3].v[2]) > 0.1:
-            fill = False
-            i=1
 
         print(hitting_angle, power)
         sphere.draw()
+    cue_hit(hitting_angle)
+    global XD
+    Cs = spheres[which_ball % 3].p
+    Bat = Cube(Cs[1], Cs[1] + 1, Cs[2] - 0.5, Cs[2] + 0.5, Cs[0] - 7, Cs[0] - 1, color=[0, 0, 0], fill=fill)
 
+    Bat.draw(-np.rad2deg(atan2(XD[0], XD[2]))+90, Cs)
+    if abs(spheres[which_ball % 3].v[0]) <= 0.1  or abs(spheres[which_ball % 3].v[2]) <= 0.1:
+        i+=1
+    else:
+        # fill = False
+        i = 1
+
+    if abs(spheres[which_ball % 3].v[0]) <= 0.1 and i > 2 or abs(spheres[which_ball % 3].v[2]) <= 0.1 and i > 0:
+        fill = True
+        Bat = Cube(Cs[1], Cs[1] + 1, Cs[2] - 0.5, Cs[2] + 0.5, Cs[0] - 7, Cs[0] - 1, color=[0, 0, 0], fill=fill)
+
+        Bat.draw(np.rad2deg(hitting_angle), Cs)
+
+    # elif abs(spheres[which_ball % 3].v[0]) > 0.1 or abs(spheres[which_ball % 3].v[2]) > 0.1:
+    #     fill = False
+    #     i=1
 
     glutSwapBuffers()
     # glFlush()
 
+def sphere_to_sphere_collision(sphere1, sphere2, dt):
+    sphere1.p -= dt * sphere1.v
+    sphere2.p -= dt * sphere2.v
+
+    # n = np.array([sphere2.p[0] - sphere1.p[0], sphere2.p[1] - sphere1.p[1], sphere2.p[2] - sphere1.p[2]])
+    n = sphere2.p - sphere1.p
+    # if np.linalg.norm((sphere1.v - sphere2.v) * n) < 0:
+    #     print('wybrane')
+    # else:
+    #     n = sphere1.p - sphere2.p
+    #     print('XD2')
+    if np.abs(n[0]) <= np.abs(n[1]) and np.abs(n[0]) <= np.abs(n[2]):
+        t = np.array([0, n[2], -n[1]])
+    elif np.abs(n[1]) <= np.abs(n[0]) and np.abs(n[1]) <= np.abs(n[2]):
+        t = np.array([-n[2], 0, n[0]])
+    elif np.abs(n[2]) <= np.abs(n[0]) and np.abs(n[2]) <= np.abs(n[1]):
+        t = np.array([n[1], -n[0], 0])
+    k = np.cross(n, t)
+    P = normalize(np.array([n, t, k])) * [1, 1, -1]
+
+    u1 = P @ np.array(sphere1.v)
+    u2 = P @ np.array(sphere2.v)
+
+    I_n = (sphere1.m * sphere2.m * (u2[0] - u1[0]) * (1 + sphere1.s)) / (sphere1.m + sphere2.m)
+
+    v1 = [(I_n + sphere1.m * u1[0]) / sphere1.m, u1[1], u1[2]]
+    v2 = [(-I_n + sphere2.m * u2[0]) / sphere2.m, u2[1], u2[2]]
+
+    sphere1.v = v1 @ np.linalg.inv(P)
+    sphere2.v = v2 @ np.linalg.inv(P)
 
 glutInit()
 glutInitWindowSize(600, 600)
