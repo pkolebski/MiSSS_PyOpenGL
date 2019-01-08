@@ -82,6 +82,7 @@ class Cube():
     def draw(self, angle=0, sphere=[]):
         glLoadIdentity()
         if angle != 0:
+            # glPushMatrix()
             glTranslate(sphere[0], sphere[1], sphere[2])
             glRotate(angle, 0, 1, 0)
             glTranslate(-sphere[0], -sphere[1], -sphere[2])
@@ -93,3 +94,4 @@ class Cube():
                 glVertex3fv(self.vertices[link[i]])
             glEnd()
         if not self.fill: glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
+        # if angle != 0: glPopMatrix()

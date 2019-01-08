@@ -136,7 +136,6 @@ def Bat_update(bat, angle):
     bat.back = bat.back * temp[2]
     bat.front = bat.front * temp[2]
 
-# wymuszenie częstotliwości odświeżania
 def cupdate():
     global tick
     ltime = time.clock()
@@ -149,7 +148,7 @@ def stick_move(bat, bat_end):
     global stick_start_pos, juzniewiemjaknazywaczmienne
     cs = spheres[which_ball % 3].p
     if juzniewiemjaknazywaczmienne > 0:
-        juzniewiemjaknazywaczmienne -= 0.2
+        juzniewiemjaknazywaczmienne -= 0.4
         bat = Cube(bat.down, bat.up, bat.left, bat.right, bat.back - juzniewiemjaknazywaczmienne, bat.front - juzniewiemjaknazywaczmienne, color=bat.color)
 
         bat_end.p -= [juzniewiemjaknazywaczmienne, 0, 0]
@@ -160,7 +159,6 @@ def stick_move(bat, bat_end):
     return bat, bat_end
 
 
-# pętla wyświetlająca
 def display():
     global sphere, myszkax, myszkay, distance, hitting_angle, which_ball, power, i, stick_start_pos
     if not cupdate():
@@ -208,12 +206,8 @@ def display():
     gluQuadricNormals(bat_end.quad, GLU_SMOOTH)
     if juzniewiemjaknazywaczmienne != 3:
         Bat, bat_end = stick_move(Bat, bat_end)
-    Bat.draw(np.rad2deg(hitting_angle), Cs)
-    bat_end.draw(np.rad2deg(hitting_angle), Cs)
-
-    # elif abs(spheres[which_ball % 3].v[0]) > 0.1 or abs(spheres[which_ball % 3].v[2]) > 0.1:
-    #     fill = False
-    #     i=1
+    Bat.draw(np.rad2deg(-hitting_angle), Cs)
+    bat_end.draw(np.rad2deg(-hitting_angle), Cs)
 
     glutSwapBuffers()
     # glFlush()
