@@ -21,8 +21,12 @@ class Sphere():
         self.gravity = gravity
         self.aerodyn = aerodyn
 
-    def draw(self):
+    def draw(self, angle=0, sphere=[]):
         glLoadIdentity()
+        if angle != 0:
+            glTranslate(sphere[0], sphere[1], sphere[2])
+            glRotate(angle, 0, 1, 0)
+            glTranslate(-sphere[0], -sphere[1], -sphere[2])
         glTranslatef(self.p[0], self.p[1], self.p[2])
         glColor3fv(self.col)
         gluSphere(self.quad, self.r, 16, 16)

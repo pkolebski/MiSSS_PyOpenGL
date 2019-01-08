@@ -16,6 +16,8 @@ hitting_angle = 0
 power = 10
 i=1
 XD = [0, 0, 0]
+stick_start_pos = None
+juzniewiemjaknazywaczmienne = 3
 
 distance = 30
 cubes = []
@@ -32,7 +34,7 @@ spheres.append(Sphere(v=[7, 0, 5], p=[3, 3, 0], col=[1, 0, 0.5]))
 
 def mouseWheel(a, b, c, d):
     global distance
-    distance += b
+    distance -= b
 
 def myszka(x, y):
     global myszkax, myszkay
@@ -73,8 +75,10 @@ def keypress(key, x, y):
         if power>10:
             power=0
     if key == b'v':
-        global chosen_sphere
-        hit_ball(hitting_angle,power)
+        global chosen_sphere, stick_start_pos, juzniewiemjaknazywaczmienne
+        stick_start_pos = spheres[which_ball % 3].p
+        # hit_ball(hitting_angle,power)
+        juzniewiemjaknazywaczmienne = 2.9
 
 
 def check_sphere_to_sphere_collision(obj1, obj2):
@@ -141,9 +145,24 @@ def cupdate():
     tick = ltime
     return True
 
+def stick_move(bat, bat_end):
+    global stick_start_pos, juzniewiemjaknazywaczmienne
+    cs = spheres[which_ball % 3].p
+    if juzniewiemjaknazywaczmienne > 0:
+        juzniewiemjaknazywaczmienne -= 0.2
+        bat = Cube(bat.down, bat.up, bat.left, bat.right, bat.back - juzniewiemjaknazywaczmienne, bat.front - juzniewiemjaknazywaczmienne, color=bat.color)
+
+        bat_end.p -= [juzniewiemjaknazywaczmienne, 0, 0]
+    else:
+        hit_ball(hitting_angle, power)
+        juzniewiemjaknazywaczmienne = 3
+        stick_start_pos = None
+    return bat, bat_end
+
+
 # pętla wyświetlająca
 def display():
-    global sphere, myszkax, myszkay, distance, hitting_angle, which_ball, power, i
+    global sphere, myszkax, myszkay, distance, hitting_angle, which_ball, power, i, stick_start_pos
     if not cupdate():
         return
     glMatrixMode(GL_PROJECTION)
@@ -162,8 +181,7 @@ def display():
 
     for cube in cubes:
         cube.draw()
-    fill = False
-    # i=1
+
     for sphere in spheres:
         sphere.update(0.2, cubes[0].up)
         chceckSphereToCubeCollision(sphere, cubes[0])
@@ -181,22 +199,17 @@ def display():
         print(hitting_angle, power)
         sphere.draw()
     cue_hit(hitting_angle)
-    global XD
+    global XD, stick_start_pos, juzniewiemjaknazywaczmienne
     Cs = spheres[which_ball % 3].p
-    Bat = Cube(Cs[1], Cs[1] + 1, Cs[2] - 0.5, Cs[2] + 0.5, Cs[0] - 7, Cs[0] - 1, color=[0, 0, 0], fill=fill)
 
-    Bat.draw(-np.rad2deg(atan2(XD[0], XD[2]))+90, Cs)
-    if abs(spheres[which_ball % 3].v[0]) <= 0.1  or abs(spheres[which_ball % 3].v[2]) <= 0.1:
-        i+=1
-    else:
-        # fill = False
-        i = 1
-
-    if abs(spheres[which_ball % 3].v[0]) <= 0.1 and i > 2 or abs(spheres[which_ball % 3].v[2]) <= 0.1 and i > 0:
-        fill = True
-        Bat = Cube(Cs[1], Cs[1] + 1, Cs[2] - 0.5, Cs[2] + 0.5, Cs[0] - 7, Cs[0] - 1, color=[0, 0, 0], fill=fill)
-
-        Bat.draw(np.rad2deg(hitting_angle), Cs)
+    Bat = Cube(Cs[1], Cs[1] + 1, Cs[2] - 0.5, Cs[2] + 0.5, Cs[0] - 7, Cs[0] - 2, color=[0, 0, 0], fill=True)
+    bat_end = Sphere(p=Cs + [-2, 0.5, 0], r=0.8)
+    bat_end.quad = gluNewQuadric()
+    gluQuadricNormals(bat_end.quad, GLU_SMOOTH)
+    if juzniewiemjaknazywaczmienne != 3:
+        Bat, bat_end = stick_move(Bat, bat_end)
+    Bat.draw(np.rad2deg(hitting_angle), Cs)
+    bat_end.draw(np.rad2deg(hitting_angle), Cs)
 
     # elif abs(spheres[which_ball % 3].v[0]) > 0.1 or abs(spheres[which_ball % 3].v[2]) > 0.1:
     #     fill = False
