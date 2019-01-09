@@ -32,16 +32,18 @@ class Sphere():
         gluSphere(self.quad, self.r, 16, 16)
 
     def update(self, dt, floor):
+        self.a = (self.v**2 * self.aerodyn) / self.m
+
         if self.p[1] - self.r < floor:
             self.v += [
-                np.sign(self.v[0]) * -1 * self.aerodyn,
-                np.sign(self.v[1]) * -1 * self.aerodyn,
-                np.sign(self.v[2]) * -1 * self.aerodyn]
+                np.sign(self.v[0]) * -1 * dt * self.a[0],
+                np.sign(self.v[1]) * -1 * dt * self.a[1],
+                np.sign(self.v[2]) * -1 * dt * self.a[2]]
         else:
             self.v += [
-                np.sign(self.v[0]) * -1 * self.aerodyn,
-                -self.gravity + (np.sign(self.v[1]) * -1 * self.aerodyn),
-                np.sign(self.v[2]) * -1 * self.aerodyn]
+                np.sign(self.v[0]) * -1 * dt * self.a[0],
+                (-dt * self.gravity) + (np.sign(self.v[1]) * -1 * dt * self.a[1]),
+                np.sign(self.v[2]) * -1 * dt * self.a[2]]
 
         self.p[0] += dt * self.v[0]
         self.p[1] += dt * self.v[1]
