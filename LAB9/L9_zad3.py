@@ -18,6 +18,7 @@ i=1
 XD = [0, 0, 0]
 stick_start_pos = None
 juzniewiemjaknazywaczmienne = 3
+n, t, k, me = [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0]
 
 distance = 30
 cubes = []
@@ -27,9 +28,9 @@ cubes.append(Cube(-2, 4, -12, -10, -12, 12))  # prawa ograniczenie: -10
 cubes.append(Cube(-2, 4, 12, 10, -12, 12))  # lewa ograniczenie: 10
 cubes.append(Cube(-2, 4, 10, -10, -12, -10))  # tylnia ograniczenie: -10
 cubes.append(Cube(-2, 4, 10, -10, 12, 10))  # przednia ograniczenie: 10
-spheres.append(Sphere(v=[5, 0, 5], p=[-5, 3, -5], col=[1, 0, 0]))
-spheres.append(Sphere(v=[2, 0, 4], p=[5, 3, 5], col=[0, 0, 1]))
-spheres.append(Sphere(v=[7, 0, 5], p=[3, 3, 0], col=[1, 0, 0.5]))
+spheres.append(Sphere(v=[0, 0, 0], p=[8, 3, 8], col=[1, 0, 0]))
+spheres.append(Sphere(v=[0, 0, 0], p=[5, 3, 5.1], col=[0, 0, 1]))
+spheres.append(Sphere(v=[7, 0, 5], p=[1, 3, 1], col=[1, 0, 0.5]))
 
 
 def mouseWheel(a, b, c, d):
@@ -82,11 +83,11 @@ def keypress(key, x, y):
 
 
 def check_sphere_to_sphere_collision(obj1, obj2):
-    return abs((obj1.p[0] - obj2.p[0]) ** 2 + (obj1.p[2] - obj2.p[2]) ** 2) <= (obj1.r + obj2.r) ** 2
+    return abs((obj1.p[0] - obj2.p[0]) ** 2 + (obj1.p[2] - obj2.p[2]) ** 2 + (obj1.p[1] - obj2.p[1]) ** 2) <= (obj1.r + obj2.r) ** 2
 
 
 def dynamic_collision(obj1, obj2, dt):
-    obj1.p -= dt * obj1.v
+    obj1.p -= dt * obj1.vq
     obj2.p -= dt * obj2.v
     # dystans pomiedzy kulkami
 
@@ -160,7 +161,7 @@ def stick_move(bat, bat_end):
 
 
 def display():
-    global sphere, myszkax, myszkay, distance, hitting_angle, which_ball, power, i, stick_start_pos
+    global sphere, myszkax, myszkay, distance, hitting_angle, which_ball, power, i, stick_start_pos, n, t, k, me
     if not cupdate():
         return
     glMatrixMode(GL_PROJECTION)
@@ -186,7 +187,7 @@ def display():
         for sphere2 in spheres:
             if sphere != sphere2:
                 if check_sphere_to_sphere_collision(sphere, sphere2):
-                    # dynamic_collision(sphere, sphere2, 0.2)
+                    #dynamic_collision(sphere, sphere2, 0.2)
                     sphere_to_sphere_collision(sphere, sphere2, 0.2)
 
         sphere.col = sphere.orginal_col
@@ -194,7 +195,7 @@ def display():
 
 
 
-        print(hitting_angle, power)
+        #print(hitting_angle, power)
         sphere.draw()
     cue_hit(hitting_angle)
     global XD, stick_start_pos, juzniewiemjaknazywaczmienne
@@ -209,10 +210,27 @@ def display():
     Bat.draw(np.rad2deg(-hitting_angle), Cs)
     bat_end.draw(np.rad2deg(-hitting_angle), Cs)
 
+    glLoadIdentity()
+    glBegin(GL_LINES)
+    glVertex3f(me[0]+n[0], me[1]+n[1], me[2]+n[2])
+    glVertex3f(me[0], me[1], me[2])
+    glEnd()
+
+    glBegin(GL_LINES)
+    glVertex3f(me[0]+t[0], me[1]+t[1], me[2]+t[2])
+    glVertex3f(me[0], me[1], me[2])
+    glEnd()
+
+    glBegin(GL_LINES)
+    glVertex3f(me[0]+k[0], me[1]+k[1], me[2]+k[2])
+    glVertex3f(me[0], me[1], me[2])
+    glEnd()
+
     glutSwapBuffers()
     # glFlush()
 
 def sphere_to_sphere_collision(sphere1, sphere2, dt):
+    global n, t, k, me
     sphere1.p -= dt * sphere1.v
     sphere2.p -= dt * sphere2.v
 
@@ -230,6 +248,9 @@ def sphere_to_sphere_collision(sphere1, sphere2, dt):
     elif np.abs(n[2]) <= np.abs(n[0]) and np.abs(n[2]) <= np.abs(n[1]):
         t = np.array([n[1], -n[0], 0])
     k = np.cross(n, t)
+
+    me = (sphere1.p + sphere2.p) /2
+
     P = normalize(np.array([n, t, k])) * [1, 1, -1]
 
     u1 = P @ np.array(sphere1.v)

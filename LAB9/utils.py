@@ -33,7 +33,6 @@ class Sphere():
 
     def update(self, dt, floor):
         if self.p[1] - self.r < floor:
-            print("XD")
             self.v += [
                 np.sign(self.v[0]) * -1 * self.aerodyn,
                 np.sign(self.v[1]) * -1 * self.aerodyn,

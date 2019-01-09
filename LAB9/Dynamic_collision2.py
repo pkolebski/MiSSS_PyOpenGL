@@ -1,4 +1,4 @@
-def dynamic_collision(obj1, obj2, dt):
+def dynamic_collision2(obj1, obj2, dt):
 
     obj1.p -= dt * obj1.v
     obj2.p -= dt * obj2.v

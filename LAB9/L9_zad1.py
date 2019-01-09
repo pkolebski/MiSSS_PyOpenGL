@@ -27,14 +27,22 @@ def keypress(key, x, y):
     global sphere
     if key == b'+':
         sphere.s += 0.1
+        print('sprezystosc' + str(sphere.s))
     if key == b'-':
         sphere.s -= 0.1
+        print('sprezystosc' + str(sphere.s))
     if key == b',':
         sphere.gravity += 1
     if key == b'.':
         sphere.gravity -= 1
     if key == b't':
         sphere.v = np.random.rand(3) * 20
+    if key == b'p':
+        sphere.aerodyn += 0.1
+        print('areodynamika' + str(sphere.aerodyn))
+    if key == b'o':
+        sphere.aerodyn -= 0.1
+        print('areodynamika' + str(sphere.aerodyn))
 
 # klasa pomocnicza, pozwalająca na odwoływanie się do słowników przez notację kropkową
 class dd(dict):
@@ -43,7 +51,7 @@ class dd(dict):
     __delattr__ = dict.__delitem__
 
 class Sphere():
-    def __init__(self, v=[1, -1, 0], p=[0, 3, 0], col=[0, 0.5, 0], r=1, m=10, s=1.0, quad=None, gravity=.9, aerodyn=0.47):
+    def __init__(self, v=[1, -1, 0], p=[0, 3, 0], col=[0, 0.5, 0], r=1, m=10, s=1.0, quad=None, gravity=0, aerodyn=0):
         self.v = np.random.rand(3) * 10
         self.p = p
         self.col = col
