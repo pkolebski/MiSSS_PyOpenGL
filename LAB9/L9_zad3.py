@@ -168,9 +168,9 @@ def display():
     glLoadIdentity()
     glFrustum(-1, 1, -1, 1, 1, 100)
 
-    eyeX = distance * np.cos(myszkay / 100) * np.sin(myszkax / 100)
-    eyeY = distance * np.sin(myszkay / 100) * np.sin(myszkax / 100)
-    eyeZ = distance * np.cos(myszkax / 100)
+    eyeX = distance * np.cos(myszkay / 600) * np.sin(myszkax / 600)
+    eyeY = 20 #distance * np.sin(myszkay / 600) * np.sin(myszkax / 600)
+    eyeZ = distance * np.cos(myszkax / 600)
 
     gluLookAt(eyeX, eyeY, eyeZ, 0, 0, 0, 0, 1, 0)
     glMatrixMode(GL_MODELVIEW)
