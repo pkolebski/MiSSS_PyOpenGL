@@ -6,7 +6,7 @@ import time
 import numpy as np
 from utils import *
 
-# licznik czasu - do wymuszenia częstotliwości odświeżania
+# licznik czasu - do wymuszenia czestotliwosci odswiezania
 tick = 0
 
 myszkax = 0
@@ -14,15 +14,18 @@ myszkay = 0
 
 distance = 30
 
+
 def mouseWheel(a, b, c, d):
     global distance
     distance += b
+
 
 def myszka(x, y):
     global myszkax, myszkay
     myszkax = x
     myszkay = y
     glutPostRedisplay()
+
 
 def keypress(key, x, y):
     global sphere
@@ -45,48 +48,22 @@ def keypress(key, x, y):
         sphere.aerodyn -= 0.1
         print('areodynamika' + str(sphere.aerodyn))
 
-scene = Scene(-10, 10, -10, 10, 10, -10, fill = False)
-cube = Cube(-4, 4, -4, 4, -4, 4)
+
+scene = Scene(-10, 10, -10, 10, 10, -10, fill=False)
+tetrahedron = Tetrahedron(-10, -4, -4, 4, -4, 4)
 
 
-def chceckSphereToCubeCollision(sphere, cube):
-    if sphere.p[1] - sphere.r < cube.down:
-        sphere.v[1] = -sphere.s * sphere.v[1]
-        sphere.p[1] += cube.down - (sphere.p[1] - sphere.r)
-
-    if sphere.p[1] + sphere.r > cube.up:
-        sphere.v[1] = -sphere.s * sphere.v[1]
-        sphere.p[1] -= (sphere.p[1] + sphere.r) - cube.up
-
-
-    if sphere.p[0] - sphere.r < cube.front:
-        sphere.v[0] = -sphere.s * sphere.v[0]
-        sphere.p[0] += cube.front - (sphere.p[0] - sphere.r)
-
-    if sphere.p[0] + sphere.r > cube.back:
-        sphere.v[0] = -sphere.s * sphere.v[0]
-        sphere.p[0] -= (sphere.p[0] + sphere.r) - cube.back
-
-
-    if sphere.p[2] - sphere.r < cube.left:
-        sphere.v[2] = -sphere.s * sphere.v[2]
-        sphere.p[2] += cube.left - (sphere.p[2] - sphere.r)
-
-    if sphere.p[2] + sphere.r > cube.right:
-        sphere.v[2] = -sphere.s * sphere.v[2]
-        sphere.p[2] -= (sphere.p[2] + sphere.r) - cube.right
-
-
-# wymuszenie częstotliwości odświeżania
+# wymuszenie czestotliwosci odswiezania
 def cupdate():
     global tick
     ltime = time.clock()
-    if ltime < tick + 0.1: # max 10 ramek / s
+    if ltime < tick + 0.1:  # max 10 ramek / s
         return False
     tick = ltime
     return True
 
-# pętla wyświetlająca
+
+# petla wyswietlajaca
 def display():
     global sphere, myszkax, myszkay, distance
     if not cupdate():
@@ -94,7 +71,6 @@ def display():
     glMatrixMode(GL_PROJECTION)
     glLoadIdentity()
     glFrustum(-1, 1, -1, 1, 1, 100)
-
 
     eyeX = distance * np.cos(myszkay / 100) * np.sin(myszkax / 100)
     eyeY = distance * np.sin(myszkay / 100) * np.sin(myszkax / 100)
@@ -106,11 +82,11 @@ def display():
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     glLoadIdentity()
     scene.draw()
-    cube.draw()
-
+    tetrahedron.draw()
 
     glutSwapBuffers()
     # glFlush()
+
 
 glutInit()
 glutInitWindowSize(600, 600)
@@ -126,7 +102,7 @@ glClearColor(1.0, 1.0, 1.0, 1.0)
 glClearDepth(1.0)
 glDepthFunc(GL_LESS)
 glEnable(GL_DEPTH_TEST)
-# przygotowanie oświetlenia
+# przygotowanie oswietlenia
 glEnable(GL_LIGHT0)
 glLight(GL_LIGHT0, GL_POSITION, [0., 5., 5., 0.])
 glEnable(GL_LIGHTING)
