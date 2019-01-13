@@ -4,7 +4,7 @@ from OpenGL.GLUT import *
 from math import *
 import time
 import numpy as np
-from utils import *
+from utils import Tetrahedron, Scene
 
 # licznik czasu - do wymuszenia czestotliwosci odswiezania
 tick = 0
@@ -49,8 +49,8 @@ def keypress(key, x, y):
         print('areodynamika' + str(sphere.aerodyn))
 
 
-scene = Scene(-10, 10, -10, 10, 10, -10, fill=False)
-tetrahedron = Tetrahedron(-10, -4, -4, 4, -4, 4)
+scene = Scene(fill=False)
+tetrahedron = Tetrahedron()
 
 
 # wymuszenie czestotliwosci odswiezania
@@ -81,6 +81,8 @@ def display():
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     glLoadIdentity()
+    tetrahedron.update(0.2)
+    tetrahedron.check_collisions(scene)
     scene.draw()
     tetrahedron.draw()
 
