@@ -92,9 +92,8 @@ class Tetrahedron(Figure):
         ]
 
     def update(self, dt):
-
-        self.p += dt * (self.linear_velocity )
         self.p = self.p @ self.calculate_r(*self.angular_velocity)
+        self.p += dt * self.linear_velocity
         self.vertices = self.p
         self.mass_center = np.mean(self.vertices)
         self.momentum = self.mass * self.linear_velocity
