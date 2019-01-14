@@ -2,6 +2,7 @@ import numpy as np
 from OpenGL.GL import *
 from OpenGL.GLU import *
 from OpenGL.GLUT import *
+import scipy
 
 
 def normalize(vec):
@@ -61,7 +62,7 @@ class Scene(Figure):
 
 
 class Tetrahedron(Figure):
-    def __init__(self, v=[1, 1, 1], points=None, links=None, mass=3, color=[1, 1, 0.5], fill=True):
+    def __init__(self, acceleration=[1,1,1], v=[0, 0, 0], points=None, links=None, mass=3, color=[1, 1, 0.5], fill=True):
         vertices = np.array([
             [5, 5, 0],
             [-5, 5, 0],
@@ -78,12 +79,14 @@ class Tetrahedron(Figure):
         super().__init__(vertices, links, color=color, fill=fill)
         self.mass = mass
         self.mass_center = np.mean(self.vertices)
+        self.acceleration = np.array(acceleration, dtype=np.float32)
         self.linear_velocity = np.array(v, dtype=np.float32)
-        self.angular_velocity = np.array([0.5, 0, 0], dtype=np.float32)
+        self.angular_velocity = np.array([0.5, 0.1, 0.4], dtype=np.float32)
         self.r = np.mean(self.vertices[0:3])
         self.h = distance_point_wall(self.vertices[-1, :], self.vertices[:3, :])
         self.p = self.vertices
         self.momentum = self.mass * self.linear_velocity
+        self.O = np.array([0, 0, 0], dtype=np.float32)
 
         self.inertia_tensor = [
             [0.6 * self.mass * self.h ** 2 + 0.15 * self.mass * self.r ** 2, 0, 0],
@@ -91,12 +94,27 @@ class Tetrahedron(Figure):
             [0, 0, 0.3 * self.mass * self.r ** 2]
         ]
 
+        self.W_matrix=[
+            [0, -self.angular_velocity[2], self.angular_velocity[1]],
+            [self.angular_velocity[2], 0, -self.angular_velocity[0]],
+            [-self.angular_velocity[1],self.angular_velocity[0], 0 ]
+        ]
+
     def update(self, dt):
+        self.oldvelocity = self.linear_velocity
+        self.oldO=self.O
+        self.linear_velocity += dt*self.acceleration
         self.p = self.p @ self.calculate_r(*self.angular_velocity)
         self.p += dt * self.linear_velocity
         self.vertices = self.p
         self.mass_center = np.mean(self.vertices)
         self.momentum = self.mass * self.linear_velocity
+
+        self.netforce = 3 * (self.mass/1000*(self.oldvelocity-self.linear_velocity)*dt)
+        self.O = np.sum([self.netforce*(vertice-self.mass_center) for vertice in self.vertices ])
+        self.H = (self.oldO-self.O)*dt
+        self.J = self.calculate_r(*self.angular_velocity)@self.inertia_tensor@np.transpose(self.calculate_r(*self.angular_velocity))
+        self.w = scipy.linalg.inv(self.J)@self.H
 
 def distance_point_wall(point, wall):
     a, b, c = np.cross(wall[0] - wall[1], wall[1] - wall[2])
