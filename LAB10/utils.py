@@ -2,7 +2,7 @@ import numpy as np
 from OpenGL.GL import *
 from OpenGL.GLU import *
 from OpenGL.GLUT import *
-import scipy
+
 
 
 def normalize(vec):
@@ -87,7 +87,7 @@ class Tetrahedron(Figure):
         self.p = self.vertices
         self.momentum = self.mass * self.linear_velocity
         self.O = np.array([0, 0, 0], dtype=np.float32)
-
+        self.s = 0.9
         self.inertia_tensor = [
             [0.6 * self.mass * self.h ** 2 + 0.15 * self.mass * self.r ** 2, 0, 0],
             [0, 0.6 * self.mass * self.h ** 2 + 0.15 * self.mass * self.r ** 2, 0],
@@ -103,18 +103,78 @@ class Tetrahedron(Figure):
     def update(self, dt):
         self.oldvelocity = self.linear_velocity
         self.oldO=self.O
-        self.linear_velocity += dt*self.acceleration
+        self.linear_velocity += dt * self.acceleration
         self.p = self.p @ self.calculate_r(*self.angular_velocity)
         self.p += dt * self.linear_velocity
         self.vertices = self.p
         self.mass_center = np.mean(self.vertices)
         self.momentum = self.mass * self.linear_velocity
 
+
         self.netforce = 3 * (self.mass/1000*(self.oldvelocity-self.linear_velocity)*dt)
         self.O = np.sum([self.netforce*(vertice-self.mass_center) for vertice in self.vertices ])
         self.H = (self.oldO-self.O)*dt
         self.J = self.calculate_r(*self.angular_velocity)@self.inertia_tensor@np.transpose(self.calculate_r(*self.angular_velocity))
-        self.w = scipy.linalg.inv(self.J)@self.H
+        self.w = np.linalg.inv(self.J) * self.H
+
+    def sphere_to_sphere_collision(self, wall, dt):
+        wallM = 1e10
+        self.p -= dt * self.v
+        normWall = np.cross(wall[0] - wall[1], wall[1] - wall[2])
+        u = normWall @ wall[0]
+
+        temp = ((u - normWall[0]*self.p[0] - normWall[1]*self.p[1] - normWall[2]*self.p[2] ) / np.sum(normWall**2))
+        x0 = self.p[0] + normWall[0] * temp
+        x1 = self.p[1] + normWall[1] * temp
+        x2 = self.p[2] + normWall[2] * temp
+        crossingPoint = np.array([x0, x1, x2])
+
+        n = crossingPoint - self.p
+        if np.abs(n[0]) <= np.abs(n[1]) and np.abs(n[0]) <= np.abs(n[2]):
+            t = np.array([0, n[2], -n[1]])
+        elif np.abs(n[1]) <= np.abs(n[0]) and np.abs(n[1]) <= np.abs(n[2]):
+            t = np.array([-n[2], 0, n[0]])
+        elif np.abs(n[2]) <= np.abs(n[0]) and np.abs(n[2]) <= np.abs(n[1]):
+            t = np.array([n[1], -n[0], 0])
+        k = np.cross(n, t)
+
+        me = (self.p + crossingPoint) / 2
+
+        M = normalize(np.array([n, t, k])) * [1, 1, -1]
+
+        v_ntk1 = M @ np.array(self.v)
+        v_ntk2 = np.zeros(3)
+
+        G = M @ self.inertia_tensor @ np.transpose(M)
+        m_ = 1/self.mass
+        Q1 = np.linalg.inv(self.inertia_tensor)
+
+        r = crossingPoint - self.mass_center
+        r_ntk = M @ r
+        w_ntk = M @ self.angular_velocity
+        Zt = v_ntk1[1] + r_ntk[0]*w_ntk[2] - r_ntk[2]*w_ntk[0]
+        Zk = v_ntk1[2] - r_ntk[0]*w_ntk[1] + r_ntk[1]*w_ntk[0]
+        At = (Zt*zkk - Zk*zkt) / ztt*zkk - ztk*zkt
+        Bt = -(znt*zkk - znk*zkt) / (ztt*zkk - ztk*zkt)
+        Ak = (Zk*ztt - Zt*ztk) / (zkk*ztt - zkt*ztk)
+        Bk = -(znk*ztt - znt*ztk) / (zkk*ztt - zkt*ztk)
+        A1 = np.array([
+            -r_ntk[2]*At + r_ntk[1]*Ak,
+            -r_ntk[0]*Ak,
+            r_ntk[0]*At
+        ])
+        B1 = np.array([
+            -r_ntk[2] * Bt + r_ntk[1] * Bk,
+            r_ntk[2] - r_ntk[0]*Bk,
+            -r_ntk[1] + r_ntk[0]*Bt
+        ])
+        P_n = (self.s + 1) * ((v_ntk2[0] - v_ntk1[0] - r_ntk[2]*w_ntk[1] + r_ntk[1]*w_ntk[2] - (r_ntk[2]*Q1[1,:]@A1 - r_ntk[1]*Q1[2,:]@A1)) / (m_ + r_ntk[2]*Q[1,:]@B1 - r_ntk[1]*Q1[2,:]@B1))
+
+        v1 = [(I_n + self.m * v_ntk1[0]) / self.m, v_ntk1[1], v_ntk1[2]]
+        v2 = [(-I_n + wallM * v_ntk2[0]) / wallM, v_ntk2[1], v_ntk2[2]]
+
+        self.v = v1 @ np.linalg.inv(M)
+        wall.v = v2 @ np.linalg.inv(M)
 
 def distance_point_wall(point, wall):
     a, b, c = np.cross(wall[0] - wall[1], wall[1] - wall[2])

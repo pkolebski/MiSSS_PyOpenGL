@@ -5,6 +5,7 @@ from math import *
 import time
 import numpy as np
 from utils import Tetrahedron, Scene
+import scipy
 
 # licznik czasu - do wymuszenia czestotliwosci odswiezania
 tick = 0
