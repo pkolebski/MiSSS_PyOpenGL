@@ -13,12 +13,12 @@ tick = 0
 myszkax = 0
 myszkay = 0
 
-distance = 30
+distance = 60
 
 
 def mouseWheel(a, b, c, d):
     global distance
-    distance += b
+    distance -= b
 
 
 def myszka(x, y):

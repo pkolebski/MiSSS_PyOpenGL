@@ -19,7 +19,7 @@ class Figure:
             [7, -10, 10],
             [15, 10, 10],
             [-10, -10, 10],
-            [-10, 10, 10]]
+            [-10, 10, 10]], dtype=np.float32
         ) if points is None else points
         self.links = np.array([
             [0, 1, 2, 3],
@@ -27,16 +27,10 @@ class Figure:
             [0, 1, 5, 4],
             [2, 3, 6, 7],
             [0, 3, 6, 4],
-            [1, 2, 7, 5]
-        ]) if links is None else links
+            [1, 2, 7, 5]]
+        ) if links is None else links
         self.color = color
         self.fill = fill
-
-    def check_collisions(self, obj):
-        for link in obj.links:
-            for point in self.vertices:
-                if distance_point_wall(point, obj.vertices[link]) < 0.4:
-                    print("kolizja")
 
     def draw(self):
         glLoadIdentity()
@@ -81,7 +75,7 @@ class Tetrahedron(Figure):
         self.mass_center = np.mean(self.vertices)
         self.acceleration = np.array(acceleration, dtype=np.float32)
         self.linear_velocity = np.array(v, dtype=np.float32)
-        self.angular_velocity = np.array([0.5, 0.1, 0.4], dtype=np.float32)
+        self.angular_velocity = np.array([0, 0, 0], dtype=np.float32)
         self.r = np.mean(self.vertices[0:3])
         self.h = distance_point_wall(self.vertices[-1, :], self.vertices[:3, :])
         self.p = self.vertices
@@ -103,7 +97,7 @@ class Tetrahedron(Figure):
 
     def update(self, dt):
         self.oldvelocity = self.linear_velocity
-        self.oldO=self.O
+        self.oldO = self.O
         self.linear_velocity += dt * self.acceleration
         self.p = self.p @ self.calculate_r(*self.angular_velocity)
         self.p += dt * self.linear_velocity
@@ -118,18 +112,25 @@ class Tetrahedron(Figure):
         self.J = self.calculate_r(*self.angular_velocity)@self.inertia_tensor@np.transpose(self.calculate_r(*self.angular_velocity))
         self.w = np.linalg.inv(self.J) * self.H
 
-    def Collision(self, wall, dt):
-        self.p -= dt * self.v
+    def check_collisions(self, obj):
+        for link in obj.links:
+            for point in self.vertices:
+                if distance_point_wall(point, obj.vertices[link]) < 1:
+                    self.collision(obj.vertices[link], point, 0.2)
+
+    def collision(self, wall, point, dt):
+        print('XD')
+        self.p -= dt * self.linear_velocity
         normWall = np.cross(wall[0] - wall[1], wall[1] - wall[2])
         u = normWall @ wall[0]
 
-        temp = ((u - normWall[0]*self.p[0] - normWall[1]*self.p[1] - normWall[2]*self.p[2] ) / np.sum(normWall**2))
-        x0 = self.p[0] + normWall[0] * temp
-        x1 = self.p[1] + normWall[1] * temp
-        x2 = self.p[2] + normWall[2] * temp
+        temp = ((u - normWall[0]*point[0] - normWall[1]*point[1] - normWall[2]*point[2] ) / np.sum(normWall**2))
+        x0 = point[0] + normWall[0] * temp
+        x1 = point[1] + normWall[1] * temp
+        x2 = point[2] + normWall[2] * temp
         crossingPoint = np.array([x0, x1, x2])
 
-        n = crossingPoint - self.p
+        n = crossingPoint - point
         if np.abs(n[0]) <= np.abs(n[1]) and np.abs(n[0]) <= np.abs(n[2]):
             t = np.array([0, n[2], -n[1]])
         elif np.abs(n[1]) <= np.abs(n[0]) and np.abs(n[1]) <= np.abs(n[2]):
@@ -142,35 +143,41 @@ class Tetrahedron(Figure):
 
         M = normalize(np.array([n, t, k])) * [1, 1, -1]
 
-        v_ntk1 = M @ np.array(self.v)
+        v_ntk1 = M @ np.array(self.linear_velocity)
         v_ntk2 = np.zeros(3)
 
         G = M @ self.inertia_tensor @ np.transpose(M)
         m_ = 1/self.mass
-        self.self.Q1 = np.linalg.inv(self.inertia_tensor)
+        self.Q1 = np.linalg.inv(G) # self.inertia_tensor)
 
         r = crossingPoint - self.mass_center
-        self.self.r_ntk = M @ r
+        self.r_ntk = M @ r
         w_ntk = M @ self.angular_velocity
 
         PC = self.Calculate_critical_P(v_ntk1, v_ntk2, w_ntk, m_)
         PM = self.Calculate_max_P(v_ntk1, v_ntk2, w_ntk, m_)
 
-        self.v = v1 @ np.linalg.inv(M)
-        wall.v = v2 @ np.linalg.inv(M)
+        v = (PM / self.mass) + v_ntk1
+        v1 = (PC / self.mass) + v_ntk1
+        if np.linalg.norm(v) > np.linalg.norm(v1):
+            v = v1
+        print(np.linalg.norm(v), np.linalg.norm(v1))
+
+        self.linear_velocity = v @ np.linalg.inv(M)
+
 
     def Calculate_velocity(self, P):
-
+        pass
 
     def Calculate_critical_P(self, v_ntk1, v_ntk2, w_ntk, m_):
-        Zt = v_ntk1[1] + self.r_ntk[0]*w_ntk[2] - self.self.r_ntk[2]*w_ntk[0]
+        Zt = v_ntk1[1] + self.r_ntk[0]*w_ntk[2] - self.r_ntk[2]*w_ntk[0]
         Zk = v_ntk1[2] - self.r_ntk[0]*w_ntk[1] + self.r_ntk[1]*w_ntk[0]
-        znt = -self.h(0,3,2,2) + self.h(0,3,3,2) + self.h(2,1,2,2) - self.h(2,1,3,1)
-        ztt = self.h(0,3,1,2) - self.h(0,3,3,0) - self.h(2,1,1,2) + self.h(2,1,3,0) - m_
-        zkt = -self.h(0,3,1,1) + self.h(0,3,2,0) + self.h(2,1,1,1) - self.h(2,1,2,0)
-        znk = self.h(0,2,2,2) - self.h(0,2,3,1) - self.h(1,1,2,2) + self.h(1,1,3,1)
-        ztk = -self.h(0,2,1,2) + self.h(0,2,3,0) + self.h(1,1,1,2) - self.h(1,1,3,0)
-        zkk = self.h(0,2,1,1) - self.h(0,2,2,0) - self.h(1,1,1,1) + self.h(1,1,2,0) - m_
+        znt = -self.get_h(0,2,1,2) + self.get_h(0,2,2,2) + self.get_h(2,0,1,2) - self.get_h(2,0,2,1)
+        ztt =  self.get_h(0,2,0,2) - self.get_h(0,2,2,0) - self.get_h(2,0,0,2) + self.get_h(2,0,2,0) - m_
+        zkt = -self.get_h(0,2,0,1) + self.get_h(0,2,1,0) + self.get_h(2,0,0,1) - self.get_h(2,0,1,0)
+        znk =  self.get_h(0,1,1,2) - self.get_h(0,1,2,1) - self.get_h(1,0,1,2) + self.get_h(1,0,2,1)
+        ztk = -self.get_h(0,1,2,2) + self.get_h(0,1,2,0) + self.get_h(1,0,0,2) - self.get_h(1,0,2,0)
+        zkk =  self.get_h(0,1,2,1) - self.get_h(0,1,1,0) - self.get_h(1,0,0,1) + self.get_h(1,0,1,0) - m_
         At = (Zt*zkk - Zk*zkt) / ztt*zkk - ztk*zkt
         Bt = -(znt*zkk - znk*zkt) / (ztt*zkk - ztk*zkt)
         Ak = (Zk*ztt - Zt*ztk) / (zkk*ztt - zkt*ztk)
@@ -189,7 +196,7 @@ class Tetrahedron(Figure):
         P_t = At + Bt*P_n
         P_k = Ak + Bk*P_n
 
-        return P_n, P_t, P_k
+        return np.array([P_n, P_t, P_k])
 
     def Calculate_max_P(self, v_ntk1, v_ntk2, w_ntk, m_):
         phi_n = v_ntk1[0] - w_ntk[2]*self.r_ntk[1] + w_ntk[1]*self.r_ntk[2]
@@ -202,16 +209,16 @@ class Tetrahedron(Figure):
             self.r_ntk[2] - self.r_ntk[0]*u_k,
             -self.r_ntk[1] + self.r_ntk[0]*u_t
         ])
-        P_n = (self.s + 1)* ((v_ntk2[0] - v_ntk1[0] - self.r_ntk[2]*w_ntk[1] + self.r_ntk[1]*w_ntk[2])/(m_ + self.r_ntk[2]*self.Q1[1,:]*C1 - self.r_ntk[1]*self.Q1[2,:]*C1))
+        P_n = (self.s + 1)* ((v_ntk2[0] - v_ntk1[0] - self.r_ntk[2]*w_ntk[1] + self.r_ntk[1]*w_ntk[2])/(m_ + self.r_ntk[2]*self.Q1[1,:]@C1 - self.r_ntk[1]*self.Q1[2,:]@C1))
         P_t = P_n * u_t
         P_k = P_n * u_k
 
-        return P_n, P_t, P_k
+        return np.array([P_n, P_t, P_k])
 
-    def h(self, a, b, c, d):
-        return self.self.r_ntk[a] * self.self.Q1[b,c] * self.self.r_ntk[d]
+    def get_h(self, a, b, c, d):
+        return self.r_ntk[a] * self.Q1[b,c] * self.r_ntk[d]
 
 def distance_point_wall(point, wall):
-    a, b, c = np.cross(wall[0] - wall[1], wall[1] - wall[2])
+    a, b, c = normalize(np.cross(wall[0] - wall[1], wall[1] - wall[2]))
     return np.abs(a * (point[0] - wall[0, 0]) + b * (point[1] - wall[0, 1]) + c * (point[2] - wall[0, 2]))
 
