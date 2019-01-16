@@ -88,6 +88,7 @@ class Tetrahedron(Figure):
         self.momentum = self.mass * self.linear_velocity
         self.O = np.array([0, 0, 0], dtype=np.float32)
         self.s = 0.9
+        self.u = 0.2
         self.inertia_tensor = [
             [0.6 * self.mass * self.h ** 2 + 0.15 * self.mass * self.r ** 2, 0, 0],
             [0, 0.6 * self.mass * self.h ** 2 + 0.15 * self.mass * self.r ** 2, 0],
@@ -117,8 +118,7 @@ class Tetrahedron(Figure):
         self.J = self.calculate_r(*self.angular_velocity)@self.inertia_tensor@np.transpose(self.calculate_r(*self.angular_velocity))
         self.w = np.linalg.inv(self.J) * self.H
 
-    def sphere_to_sphere_collision(self, wall, dt):
-        wallM = 1e10
+    def Collision(self, wall, dt):
         self.p -= dt * self.v
         normWall = np.cross(wall[0] - wall[1], wall[1] - wall[2])
         u = normWall @ wall[0]
@@ -147,35 +147,71 @@ class Tetrahedron(Figure):
 
         G = M @ self.inertia_tensor @ np.transpose(M)
         m_ = 1/self.mass
-        Q1 = np.linalg.inv(self.inertia_tensor)
+        self.self.Q1 = np.linalg.inv(self.inertia_tensor)
 
         r = crossingPoint - self.mass_center
-        r_ntk = M @ r
+        self.self.r_ntk = M @ r
         w_ntk = M @ self.angular_velocity
-        Zt = v_ntk1[1] + r_ntk[0]*w_ntk[2] - r_ntk[2]*w_ntk[0]
-        Zk = v_ntk1[2] - r_ntk[0]*w_ntk[1] + r_ntk[1]*w_ntk[0]
+
+        PC = self.Calculate_critical_P(v_ntk1, v_ntk2, w_ntk, m_)
+        PM = self.Calculate_max_P(v_ntk1, v_ntk2, w_ntk, m_)
+
+        self.v = v1 @ np.linalg.inv(M)
+        wall.v = v2 @ np.linalg.inv(M)
+
+    def Calculate_velocity(self, P):
+
+
+    def Calculate_critical_P(self, v_ntk1, v_ntk2, w_ntk, m_):
+        Zt = v_ntk1[1] + self.r_ntk[0]*w_ntk[2] - self.self.r_ntk[2]*w_ntk[0]
+        Zk = v_ntk1[2] - self.r_ntk[0]*w_ntk[1] + self.r_ntk[1]*w_ntk[0]
+        znt = -self.h(0,3,2,2) + self.h(0,3,3,2) + self.h(2,1,2,2) - self.h(2,1,3,1)
+        ztt = self.h(0,3,1,2) - self.h(0,3,3,0) - self.h(2,1,1,2) + self.h(2,1,3,0) - m_
+        zkt = -self.h(0,3,1,1) + self.h(0,3,2,0) + self.h(2,1,1,1) - self.h(2,1,2,0)
+        znk = self.h(0,2,2,2) - self.h(0,2,3,1) - self.h(1,1,2,2) + self.h(1,1,3,1)
+        ztk = -self.h(0,2,1,2) + self.h(0,2,3,0) + self.h(1,1,1,2) - self.h(1,1,3,0)
+        zkk = self.h(0,2,1,1) - self.h(0,2,2,0) - self.h(1,1,1,1) + self.h(1,1,2,0) - m_
         At = (Zt*zkk - Zk*zkt) / ztt*zkk - ztk*zkt
         Bt = -(znt*zkk - znk*zkt) / (ztt*zkk - ztk*zkt)
         Ak = (Zk*ztt - Zt*ztk) / (zkk*ztt - zkt*ztk)
         Bk = -(znk*ztt - znt*ztk) / (zkk*ztt - zkt*ztk)
         A1 = np.array([
-            -r_ntk[2]*At + r_ntk[1]*Ak,
-            -r_ntk[0]*Ak,
-            r_ntk[0]*At
+            -self.r_ntk[2]*At + self.r_ntk[1]*Ak,
+            -self.r_ntk[0]*Ak,
+            self.r_ntk[0]*At
         ])
         B1 = np.array([
-            -r_ntk[2] * Bt + r_ntk[1] * Bk,
-            r_ntk[2] - r_ntk[0]*Bk,
-            -r_ntk[1] + r_ntk[0]*Bt
+            -self.r_ntk[2] * Bt + self.r_ntk[1] * Bk,
+            self.r_ntk[2] - self.r_ntk[0]*Bk,
+            -self.r_ntk[1] + self.r_ntk[0]*Bt
         ])
-        P_n = (self.s + 1) * ((v_ntk2[0] - v_ntk1[0] - r_ntk[2]*w_ntk[1] + r_ntk[1]*w_ntk[2] - (r_ntk[2]*Q1[1,:]@A1 - r_ntk[1]*Q1[2,:]@A1)) / (m_ + r_ntk[2]*Q[1,:]@B1 - r_ntk[1]*Q1[2,:]@B1))
+        P_n = (self.s + 1) * ((v_ntk2[0] - v_ntk1[0] - self.r_ntk[2]*w_ntk[1] + self.r_ntk[1]*w_ntk[2] - (self.r_ntk[2]*self.Q1[1,:]@A1 - self.r_ntk[1]*self.Q1[2,:]@A1)) / (m_ + self.r_ntk[2]*self.Q1[1,:]@B1 - self.r_ntk[1]*self.Q1[2,:]@B1))
+        P_t = At + Bt*P_n
+        P_k = Ak + Bk*P_n
 
-        v1 = [(I_n + self.m * v_ntk1[0]) / self.m, v_ntk1[1], v_ntk1[2]]
-        v2 = [(-I_n + wallM * v_ntk2[0]) / wallM, v_ntk2[1], v_ntk2[2]]
+        return P_n, P_t, P_k
 
-        self.v = v1 @ np.linalg.inv(M)
-        wall.v = v2 @ np.linalg.inv(M)
+    def Calculate_max_P(self, v_ntk1, v_ntk2, w_ntk, m_):
+        phi_n = v_ntk1[0] - w_ntk[2]*self.r_ntk[1] + w_ntk[1]*self.r_ntk[2]
+        phi_t = v_ntk1[1] - w_ntk[2]*self.r_ntk[0] - w_ntk[0]*self.r_ntk[2]
+        phi_k = v_ntk1[2] - w_ntk[1]*self.r_ntk[0] + w_ntk[0]*self.r_ntk[1]
+        u_t = np.abs(self.u * (phi_t)/(np.sqrt(phi_t**2 + phi_k**2))) * np.sign(phi_t/phi_n)
+        u_k = np.abs(self.u * (phi_k)/(np.sqrt(phi_t**2 + phi_k**2))) * np.sign(phi_k/phi_n)
+        C1 = np.array([
+            -self.r_ntk[2]*u_t + self.r_ntk[1]*u_k,
+            self.r_ntk[2] - self.r_ntk[0]*u_k,
+            -self.r_ntk[1] + self.r_ntk[0]*u_t
+        ])
+        P_n = (self.s + 1)* ((v_ntk2[0] - v_ntk1[0] - self.r_ntk[2]*w_ntk[1] + self.r_ntk[1]*w_ntk[2])/(m_ + self.r_ntk[2]*self.Q1[1,:]*C1 - self.r_ntk[1]*self.Q1[2,:]*C1))
+        P_t = P_n * u_t
+        P_k = P_n * u_k
+
+        return P_n, P_t, P_k
+
+    def h(self, a, b, c, d):
+        return self.self.r_ntk[a] * self.self.Q1[b,c] * self.self.r_ntk[d]
 
 def distance_point_wall(point, wall):
     a, b, c = np.cross(wall[0] - wall[1], wall[1] - wall[2])
     return np.abs(a * (point[0] - wall[0, 0]) + b * (point[1] - wall[0, 1]) + c * (point[2] - wall[0, 2]))
+
