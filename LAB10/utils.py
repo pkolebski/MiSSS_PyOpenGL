@@ -63,13 +63,19 @@ class Figure:
              [-np.cos(alfa) * np.sin(beta) * np.cos(gamma) + np.sin(alfa) + np.sin(gamma)
                  , np.cos(alfa) * np.sin(beta) * np.sin(gamma) + np.sin(alfa) * np.cos(gamma),
               np.cos(alfa) * np.cos(beta)]])
+    def calculate_r3(self, alpha, beta, gamma):
+        return np.array([
+            [ np.cos(gamma) * np.cos(alpha) - np.cos(beta) * np.sin(alpha) * np.sin(gamma),  np.cos(gamma) * np.sin(alpha) + np.cos(beta) * np.cos(alpha) * np.sin(gamma), np.sin(gamma) * np.sin(beta)],
+            [-np.sin(gamma) * np.cos(alpha) - np.cos(beta) * np.sin(alpha) * np.cos(gamma), -np.sin(gamma) * np.sin(alpha) + np.cos(beta) * np.cos(alpha) * np.cos(gamma), np.cos(gamma) * np.sin(beta)],
+            [np.sin(beta) * np.sin(alpha), -np.sin(beta) * np.cos(alpha), np.cos(beta)]
+        ])
 
 class Scene(Figure):
     pass
 
 
 class Tetrahedron(Figure):
-    def __init__(self, acceleration=[0,0,0], v=[1,1,1], points=None, links=None, mass=3, color=[1, 1, 0.5], fill=True):
+    def __init__(self, v=[1,1,1], points=None, links=None, mass=3, color=[1, 1, 0.5], fill=True):
         vertices = np.array([
             [5, 5, 0],
             [-5, 5, 0],
@@ -86,60 +92,61 @@ class Tetrahedron(Figure):
         super().__init__(vertices, links, color=color, fill=fill)
         self.mass = mass
         self.mass_center = np.mean(self.vertices)
-        self.acceleration = np.array(acceleration, dtype=np.float32)
         self.linear_velocity = np.array(v, dtype=np.float32)
-        self.angular_velocity = np.array([0,1,0], dtype=np.float32)
+        self.angular_velocity = np.array([0,0,0], dtype=np.float32)
         self.r = np.mean(self.vertices[0:3])
+
         self.h = distance_point_wall(self.vertices[-1, :], self.vertices[:3, :])
-        self.p = self.vertices
         self.momentum = self.mass * self.linear_velocity
         self.O = np.array([0, 0, 0], dtype=np.float32)
-        self.s = 0.9
+        self.s = 0.8
         self.u = 0.2
         self.inertia_tensor = [
             [0.6 * self.mass * self.h ** 2 + 0.15 * self.mass * self.r ** 2, 0, 0],
             [0, 0.6 * self.mass * self.h ** 2 + 0.15 * self.mass * self.r ** 2, 0],
             [0, 0, 0.3 * self.mass * self.r ** 2]
         ]
+        # def InertiaMatrixSfere(center, m, pkt):
+        #     radius_2 = (np.sqrt((center[0] - pkt[0]) ** 2 + (center[1] - pkt[1]) ** 2 + (center[2] - pkt[2]) ** 2)) ** 2
+        #     return np.array(
+        #         [[(2 * m * radius_2) / 5, 0, 0], [0, (2 * m * radius_2) / 5, 0], [0, 0, (2 * m * radius_2) / 5]])
         self.W_matrix=[
             [0, -self.angular_velocity[2], self.angular_velocity[1]],
             [self.angular_velocity[2], 0, -self.angular_velocity[0]],
             [-self.angular_velocity[1],self.angular_velocity[0], 0 ]
         ]
         self.oldR = np.eye(3)
+        self.H = self.inertia_tensor @ self.angular_velocity
 
     def update(self, dt):
+
         self.W_matrix = [
             [0, -self.angular_velocity[2], self.angular_velocity[1]],
             [self.angular_velocity[2], 0, -self.angular_velocity[0]],
             [-self.angular_velocity[1], self.angular_velocity[0], 0]
         ]
-        self.gravity(dt)
-        self.oldvelocity = self.linear_velocity
-        self.oldO = self.O
-        # self.linear_velocity += dt * self.acceleration
-        self.p = self.vertices
-        self.mass_center = np.mean(self.p, 0)
-        self.p -= self.mass_center
-        R =  self.gram_schmidt(self.calculate_r2(*self.angular_velocity * dt))
 
-        for i in range(len(self.p)):
-            self.p[i, :] = R @ self.p[i, :]
-        self.p += self.mass_center
-        print(self.angular_velocity)
-        self.p += dt * self.linear_velocity
-        self.vertices = self.p
-        self.momentum = self.mass * self.linear_velocity
+        self.gravity(dt)
+        self.mass_center = np.mean(self.vertices, 0)
+        self.vertices -= self.mass_center
+        R =  self.gram_schmidt(self.calculate_r3(*self.angular_velocity * dt))
+
+        for i in range(len(self.vertices)):
+            self.vertices[i, :] = R @ self.vertices[i, :]
+        self.vertices += self.mass_center
+        self.vertices += dt * self.linear_velocity
 
 
         # self.netforce = 3 * (self.mass/1000*(self.oldvelocity-self.linear_velocity)*dt)
         # self.O = np.sum([self.netforce*(vertice-self.mass_center) for vertice in self.vertices ])
         # self.H = (self.oldO-self.O)*dt
-        self.J = R @ self.inertia_tensor @ np.transpose(R)
-        # self.angular_velocity = np.linalg.inv(self.J) @ self.H
+        # self.inertia_tensor = R @ self.inertia_tensor @ np.transpose(R)
+        self.angular_velocity = np.linalg.inv(self.inertia_tensor) @ self.H
 
     def gravity(self, dt):
         self.linear_velocity -= np.array([0, (dt * 0.9), 0])
+        self.linear_velocity *= 0.9
+        self.angular_velocity *= 0.9
 
     def gram_schmidt(self, R):
         u1 = normalize(R[0])
@@ -154,9 +161,10 @@ class Tetrahedron(Figure):
             for point in self.vertices:
                 if distance_point_wall(point, obj.vertices[link]) < 1:
                     self.collision(obj.vertices[link], point, 0.2)
+                    print("Kolizja")
 
     def collision(self, wall, point, dt):
-        self.p -= dt * self.linear_velocity
+        self.vertices -= dt * self.linear_velocity
         normWall = normalize(np.cross(wall[0] - wall[1], wall[1] - wall[2]))
         u = normWall @ wall[0]
 
@@ -175,16 +183,14 @@ class Tetrahedron(Figure):
             t = np.array([n[1], -n[0], 0])
         k = np.cross(n, t)
 
-        me = (self.p + crossingPoint) / 2
-
         M = normalize(np.array([n, t, k])) * [1, 1, -1]
+        G = M @ self.inertia_tensor @ np.transpose(M)
+        self.Q1 = np.linalg.inv(G)
 
         v_ntk1 = M @ np.array(self.linear_velocity)
         v_ntk2 = np.zeros(3)
 
-        G = M @ self.J @ np.transpose(M)
-        m_ = 1/self.mass
-        self.Q1 = np.linalg.inv(self.J)
+        m_ = 1.0 / self.mass
 
         r = crossingPoint - self.mass_center
         self.r_ntk = M @ r
@@ -205,7 +211,11 @@ class Tetrahedron(Figure):
 
         self.angular_velocity = np.linalg.inv(M) @ e
 
-        self.linear_velocity = np.linalg.inv(M) @ v
+        self.linear_velocity = np.linalg.inv(M) @ v````````````````````````````````
+
+        self.H = self.inertia_tensor @ self.angular_velocity
+
+        print(self.H)
 
 
     def Calculate_velocity(self, P):
