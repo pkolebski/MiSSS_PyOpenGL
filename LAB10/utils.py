@@ -249,6 +249,72 @@ class Tetrahedron(Figure):
 
         return np.array([P_n, P_t, P_k])
 
+    def Calculate_critical_P1P2(self, Q1, Q2, r_ntk, r_ntk2, v_ntk1, v_ntk2, w_ntk, w_ntk2, m_):
+        def get_h(a, b, c, d, e):
+            if e == 0:
+                return r_ntk[a] * Q1[b, c] * r_ntk[d]
+            else:
+                return r_ntk2[a] * Q2[b, c] * r_ntk2[d]
+
+        Zt = v_ntk1[1] - v_ntk2[1] - r_ntk2[0] * w_ntk2[2] + r_ntk2[2] * w_ntk2[0] + r_ntk[0] * w_ntk[2] - r_ntk[2] * w_ntk[
+            0]
+        Zk = v_ntk1[2] - v_ntk2[2] - r_ntk2[0] * w_ntk2[1] + r_ntk2[1] * w_ntk2[0] + r_ntk[0] * w_ntk[1] - r_ntk[1] * w_ntk[
+            0]
+        znt = -get_h(0, 2, 1, 2, 1) + get_h(0, 2, 2, 2, 1) + get_h(2, 0, 1, 2, 1) - get_h(2, 0, 2, 1, 1) - get_h(0, 2, 1, 2,
+                                                                                                                 0) + get_h(
+            0, 2, 2, 2, 0) + get_h(2, 0, 1, 2, 0) - get_h(2, 0, 2, 1, 0)
+        ztt = get_h(0, 2, 0, 2, 1) - get_h(0, 2, 2, 0, 1) - get_h(2, 0, 0, 2, 1) + get_h(2, 0, 2, 0, 1) + get_h(0, 2, 0, 2,
+                                                                                                                0) - get_h(
+            0, 2, 2, 0, 0) - get_h(2, 0, 0, 2, 0) + get_h(2, 0, 2, 0, 0) - m_
+        zkt = -get_h(0, 2, 0, 1, 1) + get_h(0, 2, 1, 0, 1) + get_h(2, 0, 0, 1, 1) - get_h(2, 0, 1, 0, 1) - get_h(0, 2, 0, 1,
+                                                                                                                 0) + get_h(
+            0, 2, 1, 0, 0) + get_h(2, 0, 0, 1, 0) - get_h(2, 0, 1, 0, 0)
+        znk = get_h(0, 1, 1, 2, 1) - get_h(0, 1, 2, 1, 1) - get_h(1, 0, 1, 2, 1) + get_h(1, 0, 2, 1, 1) + get_h(0, 1, 1, 2,
+                                                                                                                0) - get_h(
+            0, 1, 2, 1, 0) - get_h(1, 0, 1, 2, 0) + get_h(1, 0, 2, 1, 0)
+        ztk = -get_h(0, 1, 2, 2, 1) + get_h(0, 1, 2, 0, 1) + get_h(1, 0, 0, 2, 1) - get_h(1, 0, 2, 0, 1) - get_h(0, 1, 2, 2,
+                                                                                                                 0) + get_h(
+            0, 1, 2, 0, 0) + get_h(1, 0, 0, 2, 0) - get_h(1, 0, 2, 0, 0)
+        zkk = get_h(0, 1, 0, 1, 1) - get_h(0, 1, 1, 0, 1) - get_h(1, 0, 0, 1, 1) + get_h(1, 0, 1, 0, 1) + get_h(0, 1, 0, 1,
+                                                                                                                0) - get_h(
+            0, 1, 1, 0, 0) - get_h(1, 0, 0, 1, 0) + get_h(1, 0, 1, 0, 0) - m_
+        At = (Zt * zkk - Zk * zkt) / ztt * zkk - ztk * zkt
+        Bt = -(znt * zkk - znk * zkt) / (ztt * zkk - ztk * zkt)
+        Ak = (Zk * ztt - Zt * ztk) / (zkk * ztt - zkt * ztk)
+        Bk = -(znk * ztt - znt * ztk) / (zkk * ztt - zkt * ztk)
+        A1 = np.array([
+            -r_ntk[2] * At + r_ntk[1] * Ak,
+            -r_ntk[0] * Ak,
+            r_ntk[0] * At
+        ])
+        A2 = np.array([
+            r_ntk2[2] * At - r_ntk2[1] * Ak,
+            r_ntk2[0] * Ak,
+            -r_ntk2[0] * At
+        ])
+        B1 = np.array([
+            -r_ntk[2] * Bt + r_ntk[1] * Bk,
+            r_ntk[2] - r_ntk[0] * Bk,
+            -r_ntk[1] + r_ntk[0] * Bt
+        ])
+        B2 = np.array([
+            r_ntk2[2] * Bt - r_ntk2[1] * Bk,
+            -r_ntk2[2] + r_ntk2[0] * Bk,
+            r_ntk2[1] - r_ntk2[0] * Bt
+        ])
+        P_n = (self.s + 1) * ((v_ntk2[0] - v_ntk1[0] - r_ntk[2] * w_ntk[1] + r_ntk[1] * w_ntk[2] + r_ntk2[2] * w_ntk2[1] -
+                               r_ntk2[1] * w_ntk2[2] - r_ntk[2] * Q1[1, :] @ A1 - r_ntk[1] * Q1[2, :] @ A1 - r_ntk2[2] * Q2[
+                                                                                                                         1,
+                                                                                                                         :] @ A2 +
+                               r_ntk2[1] * Q2[2, :] @ A2) / (
+                                          m_ + r_ntk[2] * Q1[1, :] @ B1 - r_ntk[1] * Q1[2, :] @ B1 - r_ntk2[2] * Q2[1,
+                                                                                                                 :] @ B2 +
+                                          r_ntk2[1] * Q2[2, :] @ B2))
+        P_t = At + Bt * P_n
+        P_k = Ak + Bk * P_n
+
+        return np.array([P_n, P_t, P_k])
+
     def Calculate_max_P(self, v_ntk1, v_ntk2, w_ntk, m_):
         phi_n = v_ntk1[0] - w_ntk[2]*self.r_ntk[1] + w_ntk[1]*self.r_ntk[2]
         phi_t = v_ntk1[1] - w_ntk[2]*self.r_ntk[0] - w_ntk[0]*self.r_ntk[2]
@@ -261,6 +327,32 @@ class Tetrahedron(Figure):
             -self.r_ntk[1] + self.r_ntk[0]*u_t
         ])
         P_n = (self.s + 1)* ((v_ntk2[0] - v_ntk1[0] - self.r_ntk[2]*w_ntk[1] + self.r_ntk[1]*w_ntk[2])/(m_ + self.r_ntk[2]*self.Q1[1,:]@C1 - self.r_ntk[1]*self.Q1[2,:]@C1))
+        P_t = P_n * u_t
+        P_k = P_n * u_k
+
+        return np.array([P_n, P_t, P_k])
+
+    def Calculate_max_P2(self, v_ntk1, v_ntk2, w_ntk1, w_ntk2, r_ntk1, r_ntk2, Q1, Q2, m_):
+        phi_n = v_ntk1[0] - v_ntk2[0] - w_ntk1[2] * r_ntk1[1] + w_ntk1[1] * r_ntk1[2] + w_ntk2[2] * r_ntk2[1] - w_ntk2[1] * r_ntk2[2]
+        phi_t = v_ntk1[1] - v_ntk2[1] - w_ntk1[2] * r_ntk1[0] - w_ntk1[0] * r_ntk1[2] - w_ntk2[2] * r_ntk2[0] + w_ntk2[0] * r_ntk2[2]
+        phi_k = v_ntk1[2] - v_ntk2[1] - w_ntk1[1] * r_ntk1[0] + w_ntk1[0] * r_ntk1[1] + w_ntk2[1] * r_ntk2[0] - w_ntk2[0] * r_ntk2[1]
+        u_t = np.abs(self.u * (phi_t)/(np.sqrt(phi_t**2 + phi_k**2))) * np.sign(phi_t/phi_n)
+        u_k = np.abs(self.u * (phi_k)/(np.sqrt(phi_t**2 + phi_k**2))) * np.sign(phi_k/phi_n)
+        C1 = np.array([
+            -r_ntk1[2] * u_t + r_ntk1[1] * u_k,
+             r_ntk1[2] - r_ntk1[0]*u_k,
+            -r_ntk1[1] + r_ntk1[0]*u_t
+        ])
+
+        C2 = np.array([
+            r_ntk2[2] * u_t - r_ntk2[1] * u_k,
+            -r_ntk2[2] * u_t + r_ntk2[0] * u_k,
+            r_ntk2[1] - r_ntk2[0] * u_t
+        ])
+
+        P_n1 = (v_ntk2[0] - v_ntk1[0] - r_ntk1[2] * w_ntk1[1] + r_ntk1[1] * w_ntk1[2] + r_ntk2[2] * w_ntk2[1] - r_ntk2[1] * w_ntk2[2])
+        P_n2 = m_ + r_ntk1[2] * Q1[1, :] @ C1 - r_ntk1[1] * Q1[2, :] @ C1 - r_ntk2[2] * Q2[1, :] @ C2 + r_ntk2[1] * Q2[2, :] @ C2
+        P_n = (self.s + 1) * (P_n1 / P_n2)
         P_t = P_n * u_t
         P_k = P_n * u_k
 
