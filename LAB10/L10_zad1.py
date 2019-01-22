@@ -52,7 +52,12 @@ def keypress(key, x, y):
 
 scene = Scene(fill=False)
 tetrahedron = Tetrahedron()
-
+# tetrahedron1 = Tetrahedron(points=np.array([
+#             [5, 5, 0],
+#             [-5, 5, 0],
+#             [0, -3, 0],
+#             [0, 0, 5],
+#         ], dtype=np.float32))
 
 # wymuszenie czestotliwosci odswiezania
 def cupdate():
@@ -83,9 +88,13 @@ def display():
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     glLoadIdentity()
     tetrahedron.update(0.2)
+    # tetrahedron1.update(0.2)
     tetrahedron.check_collisions(scene)
+    # tetrahedron1.check_collisions(scene)
+    # tetrahedron1.check_collisions(tetrahedron)
     scene.draw()
     tetrahedron.draw()
+    # tetrahedron1.draw()
 
     glutSwapBuffers()
     # glFlush()
